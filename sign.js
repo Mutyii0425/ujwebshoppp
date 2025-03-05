@@ -10,6 +10,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import logo from './logo02.png';
+import { Card, CardContent } from '@mui/material';
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
@@ -28,6 +29,11 @@ const randomColor = () => {
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
+  const [userName, setUserName] = useState('');
+  const [successAlert, setSuccessAlert] = useState(false);
+  const [errorAlert, setErrorAlert] = useState(false);
+  const [loggedInUsername, setLoggedInUsername] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const [darkMode, setDarkMode] = useState(true);
   const [email, setEmail] = useState(''); // E-mail hozzáadása
 
@@ -125,21 +131,30 @@ export default function SignInForm() {
       const data = await response.json();
   
       if (!response.ok) {
-        alert(`Hiba: ${data.error}`);
+        setErrorMessage(data.error);
+        setErrorAlert(true);
+        setTimeout(() => setErrorAlert(false), 3000);
         return;
       }
   
       if (response.ok) {
         localStorage.setItem('user', JSON.stringify(data.user));
-        alert('Sikeres bejelentkezés!');
-        navigate('/kezdolap');
-    }
+        setLoggedInUsername(data.user.username);
+        setSuccessAlert(true);
+        setTimeout(() => {
+          setSuccessAlert(false);
+          navigate('/kezdolap');
+        }, 2000);
+      }
   
     } catch (error) {
-      console.error('Hiba a bejelentkezés során:', error);
-      alert('Szerverhiba!');
+      setErrorMessage('Szerverhiba történt!');
+      setErrorAlert(true);
+      setTimeout(() => setErrorAlert(false), 3000);
     }
   };
+  
+  
   
 
   return (
@@ -374,6 +389,162 @@ export default function SignInForm() {
             top: '4%',
           }}
         />
+        {successAlert && (
+  <Box
+    sx={{
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 1400,
+      animation: 'popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      '@keyframes popIn': {
+        '0%': {
+          opacity: 0,
+          transform: 'translate(-50%, -50%) scale(0.5)',
+        },
+        '50%': {
+          transform: 'translate(-50%, -50%) scale(1.05)',
+        },
+        '100%': {
+          opacity: 1,
+          transform: 'translate(-50%, -50%) scale(1)',
+        },
+      },
+    }}
+  >
+    <Card
+      sx={{
+        minWidth: 350,
+        backgroundColor: darkMode ? 'rgba(45, 45, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        color: darkMode ? '#fff' : '#000',
+        boxShadow: darkMode 
+          ? '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)' 
+          : '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+        borderRadius: '20px',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #00C853, #B2FF59)',
+          animation: 'loadingBar 2s ease-in-out',
+          '@keyframes loadingBar': {
+            '0%': { width: '0%' },
+            '100%': { width: '100%' }
+          }
+        }}
+      />
+      <CardContent sx={{ p: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              mb: 1,
+              background: darkMode 
+                ? 'linear-gradient(45deg, #90caf9, #42a5f5)' 
+                : 'linear-gradient(45deg, #1976d2, #1565c0)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+          Üdvözlünk újra, {loggedInUsername}!
+          </Typography>
+          <Typography variant="body1" sx={{ color: darkMode ? '#aaa' : '#666' }}>
+            Sikeres bejelentkezés
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  </Box>
+)}
+
+
+{errorAlert && (
+  <Box
+    sx={{
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 1400,
+      animation: 'popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      '@keyframes popIn': {
+        '0%': {
+          opacity: 0,
+          transform: 'translate(-50%, -50%) scale(0.5)',
+        },
+        '50%': {
+          transform: 'translate(-50%, -50%) scale(1.05)',
+        },
+        '100%': {
+          opacity: 1,
+          transform: 'translate(-50%, -50%) scale(1)',
+        },
+      },
+    }}
+  >
+    <Card
+      sx={{
+        minWidth: 350,
+        backgroundColor: darkMode ? 'rgba(45, 45, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        color: darkMode ? '#fff' : '#000',
+        boxShadow: darkMode 
+          ? '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)' 
+          : '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+        borderRadius: '20px',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #FF5252, #FF1744)',
+          animation: 'loadingBar 3s ease-in-out',
+          '@keyframes loadingBar': {
+            '0%': { width: '0%' },
+            '100%': { width: '100%' }
+          }
+        }}
+      />
+      <CardContent sx={{ p: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              mb: 1,
+              background: darkMode 
+                ? 'linear-gradient(45deg, #FF5252, #FF1744)' 
+                : 'linear-gradient(45deg, #D32F2F, #C62828)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Bejelentkezési hiba!
+          </Typography>
+          <Typography variant="body1" sx={{ color: darkMode ? '#aaa' : '#666' }}>
+            {errorMessage}
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  </Box>
+)}
       </Container>
     </div>
   );

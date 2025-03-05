@@ -12,7 +12,13 @@ import {
   Button,
   FormGroup,
   FormControlLabel,
-  Switch
+  Switch,
+  Popper,
+  Grow,
+  Paper,
+  ClickAwayListener,
+  MenuList,
+  MenuItem
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -65,19 +71,24 @@ export default function User() {
     setOpen(false);
     navigate('/sign');
   };
+
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'Q') {
-        navigate('/vinted');
+    const handleKeyPress = (event) => {
+      const userData = localStorage.getItem('user');
+      const user = userData ? JSON.parse(userData) : null;
+      
+      if (event.ctrlKey && event.shiftKey && event.key === 'Q') {
+        if (user && user.email === 'adaliclothing@gmail.com') {
+          navigate('/vinted');
+        }
       }
     };
-
     window.addEventListener('keydown', handleKeyPress);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
+    return () => window.removeEventListener('keydown', handleKeyPress);
   }, [navigate]);
+  
+
+   
     useEffect(() => {
       const fetchProducts = async () => {
         try {

@@ -13,6 +13,7 @@ import logo from './logo02.png';
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
+import { Card, CardContent } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
@@ -30,6 +31,7 @@ export default function SignUpForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [darkMode, setDarkMode] = useState(true);
@@ -118,34 +120,39 @@ export default function SignUpForm() {
   const toggleConfirmPasswordVisibility = () =>
     setShowConfirmPassword((prev) => !prev);
   const navigate = useNavigate();
-      const handleSubmit = async (e) => {
-        e.preventDefault();
-    
-        try {
-          const response = await fetch('http://localhost:4000/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password })
-          });
-
-          const data = await response.json();
-
-          if (response.ok) {
-            // Store user data in localStorage
-            localStorage.setItem('user', JSON.stringify({
-              username: name,
-              email: email
-            }));
+     
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
+    try {
+      const response = await fetch('http://localhost:4000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        localStorage.setItem('user', JSON.stringify({
+          username: name,
+          email: email
+        }));
         
-            alert('Sikeres regisztráció!');
-            navigate('/kezdolap');
-          } else {
-            alert(data.error);
-          }
-        } catch (error) {
-          alert('Hiba történt a regisztráció során!');
-        }
-      };
+        setShowSuccessAlert(true);
+        
+        // Késleltetett átirányítás, hogy az alert látható legyen
+        setTimeout(() => {
+          navigate('/kezdolap');
+        }, 2000);
+      } else {
+        alert(data.error);
+      }
+    } catch (error) {
+      alert('Hiba történt a regisztráció során!');
+    }
+  };
+
   return (
     <div
       style={{
@@ -434,6 +441,83 @@ export default function SignUpForm() {
             top: '4%',
           }}
         />
+        {showSuccessAlert && (
+  <Box
+    sx={{
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 1400,
+      animation: 'popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      '@keyframes popIn': {
+        '0%': {
+          opacity: 0,
+          transform: 'translate(-50%, -50%) scale(0.5)',
+        },
+        '50%': {
+          transform: 'translate(-50%, -50%) scale(1.05)',
+        },
+        '100%': {
+          opacity: 1,
+          transform: 'translate(-50%, -50%) scale(1)',
+        },
+      },
+    }}
+  >
+    <Card
+      sx={{
+        minWidth: 350,
+        backgroundColor: darkMode ? 'rgba(45, 45, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        color: darkMode ? '#fff' : '#000',
+        boxShadow: darkMode 
+          ? '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)' 
+          : '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+        borderRadius: '20px',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #00C853, #B2FF59)',
+          animation: 'loadingBar 2s ease-in-out',
+          '@keyframes loadingBar': {
+            '0%': { width: '0%' },
+            '100%': { width: '100%' }
+          }
+        }}
+      />
+      <CardContent sx={{ p: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              mb: 1,
+              background: darkMode 
+                ? 'linear-gradient(45deg, #90caf9, #42a5f5)' 
+                : 'linear-gradient(45deg, #1976d2, #1565c0)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Sikeres regisztráció!
+          </Typography>
+          <Typography variant="body1" sx={{ color: darkMode ? '#aaa' : '#666' }}>
+            Üdvözlünk az Adali Clothing oldalán!
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  </Box>
+)}
       </Container>
     </div>
   );

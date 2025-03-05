@@ -73,8 +73,13 @@ export default function Kosar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [open, setOpen] = useState(false);
   const anchorRef = React.useRef(null);
+  const [deleteAlert, setDeleteAlert] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const navigate = useNavigate();
   const [userName, setUserName] = useState('');
+  const [quantityAlert, setQuantityAlert] = useState(false);
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+  const [quantityMessage, setQuantityMessage] = useState('');
   const [cartItems, setCartItems] = useState([]);
   const cartItemCount = cartItems.reduce((total, item) => total + item.mennyiseg, 0);
   const [totalPrice, setTotalPrice] = useState(0);
@@ -103,9 +108,13 @@ export default function Kosar() {
   const handleQuantityChange = (id, increase) => {
     const updatedItems = cartItems.map(item => {
       if (item.id === id) {
+        const newQuantity = increase ? item.mennyiseg + 1 : Math.max(1, item.mennyiseg - 1);
+        setQuantityMessage(increase ? 'Mennyiség növelve' : 'Mennyiség csökkentve');
+        setQuantityAlert(true);
+        setTimeout(() => setQuantityAlert(false), 1500);
         return {
           ...item,
-          mennyiseg: increase ? item.mennyiseg + 1 : Math.max(1, item.mennyiseg - 1)
+          mennyiseg: newQuantity
         };
       }
       return item;
@@ -115,10 +124,17 @@ export default function Kosar() {
   };
 
   const handleRemoveItem = (id) => {
-    const updatedItems = cartItems.filter(item => item.id !== id);
+    setItemToDelete(id);
+    setDeleteAlert(true);
+  };
+
+  const confirmDelete = () => {
+    const updatedItems = cartItems.filter(item => item.id !== itemToDelete);
     setCartItems(updatedItems);
     localStorage.setItem('cartItems', JSON.stringify(updatedItems));
+    setDeleteAlert(false);
   };
+
     const handleCheckout = () => {
       navigate('/shipping', {
         state: {
@@ -148,9 +164,14 @@ export default function Kosar() {
   };
 
   const handleLogout = () => {
+    setShowLogoutAlert(true);
+    setOpen(false);
+  };
+  
+  const confirmLogout = () => {
     localStorage.removeItem('user');
     setIsLoggedIn(false);
-    setOpen(false);
+    setShowLogoutAlert(false);
     navigate('/sign');
   };
 
@@ -431,6 +452,314 @@ export default function Kosar() {
             </Card>
           </Grid>
         </Grid>
+        {deleteAlert && (
+  <Box
+    sx={{
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 1400,
+      animation: 'popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      '@keyframes popIn': {
+        '0%': {
+          opacity: 0,
+          transform: 'translate(-50%, -50%) scale(0.5)',
+        },
+        '50%': {
+          transform: 'translate(-50%, -50%) scale(1.05)',
+        },
+        '100%': {
+          opacity: 1,
+          transform: 'translate(-50%, -50%) scale(1)',
+        },
+      },
+    }}
+  >
+    <Card
+      sx={{
+        minWidth: 350,
+        backgroundColor: darkMode ? 'rgba(45, 45, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        color: darkMode ? '#fff' : '#000',
+        boxShadow: darkMode 
+          ? '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)' 
+          : '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+        borderRadius: '20px',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #FF5252, #FF1744)',
+          animation: 'loadingBar 2s ease-in-out',
+          '@keyframes loadingBar': {
+            '0%': { width: '0%' },
+            '100%': { width: '100%' }
+          }
+        }}
+      />
+      <CardContent sx={{ p: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              mb: 1,
+              background: darkMode 
+                ? 'linear-gradient(45deg, #FF5252, #FF1744)' 
+                : 'linear-gradient(45deg, #D32F2F, #C62828)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Termék törlése
+          </Typography>
+          <Typography variant="body1" sx={{ color: darkMode ? '#aaa' : '#666' }}>
+            Biztosan törölni szeretnéd ezt a terméket a kosárból?
+          </Typography>
+        </Box>
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            gap: 2,
+            justifyContent: 'space-between'
+          }}
+        >
+          <Button
+            onClick={() => setDeleteAlert(false)}
+            sx={{
+              flex: 1,
+              py: 1.5,
+              borderRadius: '12px',
+              backgroundColor: darkMode ? 'rgba(144, 202, 249, 0.1)' : 'rgba(25, 118, 210, 0.1)',
+              color: darkMode ? '#90caf9' : '#1976d2',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: darkMode ? 'rgba(144, 202, 249, 0.2)' : 'rgba(25, 118, 210, 0.2)',
+                transform: 'translateY(-2px)',
+              }
+            }}
+          >
+            Mégse
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            sx={{
+              flex: 1,
+              py: 1.5,
+              borderRadius: '12px',
+              background: darkMode 
+                ? 'linear-gradient(45deg, #FF5252, #FF1744)' 
+                : 'linear-gradient(45deg, #D32F2F, #C62828)',
+              color: '#fff',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+              }
+            }}
+          >
+            Törlés
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
+  </Box>
+)}
+{quantityAlert && (
+  <Box
+    sx={{
+      position: 'fixed',
+      bottom: '2rem',
+      right: '2rem',
+      zIndex: 1400,
+      animation: 'slideIn 0.3s ease-out',
+      '@keyframes slideIn': {
+        '0%': {
+          opacity: 0,
+          transform: 'translateX(100%)',
+        },
+        '100%': {
+          opacity: 1,
+          transform: 'translateX(0)',
+        },
+      },
+    }}
+  >
+    <Card
+      sx={{
+        backgroundColor: darkMode ? 'rgba(45, 45, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        color: darkMode ? '#fff' : '#000',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+        borderRadius: '12px',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          background: 'linear-gradient(90deg, #64B5F6, #2196F3)',
+          animation: 'loadingBar 1.5s ease-in-out',
+          '@keyframes loadingBar': {
+            '0%': { width: '0%' },
+            '100%': { width: '100%' }
+          }
+        }}
+      />
+      <CardContent sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            fontWeight: 500,
+            background: darkMode 
+              ? 'linear-gradient(45deg, #64B5F6, #2196F3)' 
+              : 'linear-gradient(45deg, #1976d2, #1565c0)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          {quantityMessage}
+        </Typography>
+      </CardContent>
+    </Card>
+  </Box>
+)}
+
+{showLogoutAlert && (
+  <Box
+    sx={{
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 1400,
+      animation: 'popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      '@keyframes popIn': {
+        '0%': {
+          opacity: 0,
+          transform: 'translate(-50%, -50%) scale(0.5)',
+        },
+        '50%': {
+          transform: 'translate(-50%, -50%) scale(1.05)',
+        },
+        '100%': {
+          opacity: 1,
+          transform: 'translate(-50%, -50%) scale(1)',
+        },
+      },
+    }}
+  >
+    <Card
+      sx={{
+        minWidth: 350,
+        backgroundColor: darkMode ? 'rgba(45, 45, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        color: darkMode ? '#fff' : '#000',
+        boxShadow: darkMode 
+          ? '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)' 
+          : '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+        borderRadius: '20px',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #00C853, #B2FF59)',
+          animation: 'loadingBar 2s ease-in-out',
+          '@keyframes loadingBar': {
+            '0%': { width: '0%' },
+            '100%': { width: '100%' }
+          }
+        }}
+      />
+      <CardContent sx={{ p: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              mb: 1,
+              background: darkMode 
+              ? 'linear-gradient(45deg, #90caf9, #42a5f5)' 
+              : 'linear-gradient(45deg, #1976d2, #1565c0)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Kijelentkezés
+          </Typography>
+          <Typography variant="body1" sx={{ color: darkMode ? '#aaa' : '#666' }}>
+            Biztosan ki szeretnél jelentkezni?
+          </Typography>
+        </Box>
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            gap: 2,
+            justifyContent: 'space-between'
+          }}
+        >
+          <Button
+            onClick={() => setShowLogoutAlert(false)}
+            sx={{
+              flex: 1,
+              py: 1.5,
+              borderRadius: '12px',
+              backgroundColor: darkMode ? 'rgba(144, 202, 249, 0.1)' : 'rgba(25, 118, 210, 0.1)',
+              color: darkMode ? '#90caf9' : '#1976d2',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: darkMode ? 'rgba(144, 202, 249, 0.2)' : 'rgba(25, 118, 210, 0.2)',
+                transform: 'translateY(-2px)',
+              }
+            }}
+          >
+            Mégse
+          </Button>
+          <Button
+            onClick={confirmLogout}
+            sx={{
+              flex: 1,
+              py: 1.5,
+              borderRadius: '12px',
+              background: darkMode 
+              ? 'linear-gradient(45deg, #90caf9, #42a5f5)' 
+              : 'linear-gradient(45deg, #1976d2, #1565c0)',
+              color: '#fff',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+              }
+            }}
+          >
+            Kijelentkezés
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
+  </Box>
+)}
+
       </Container>
     </div>
   );

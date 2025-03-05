@@ -51,21 +51,18 @@ app.post('/register', async (req, res) => {
 });
 
 
-// 🔹 Bejelentkezés
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   
-  console.log('Login attempt received:', { email, password });
-
   try {
       const [rows] = await db.execute('SELECT * FROM user WHERE email = ?', [email]);
-      console.log('Database query result:', rows);
 
       if (rows.length === 0) {
           return res.status(400).json({ error: 'Felhasználó nem található!' });
       }
 
       const user = rows[0];
+      // Mivel a regisztráció működik, használjuk ugyanazt a jelszó ellenőrzést
       const isMatch = await bcrypt.compare(password, user.jelszo);
 
       if (!isMatch) {
@@ -73,19 +70,21 @@ app.post('/login', async (req, res) => {
       }
 
       return res.json({ 
-        success: true,
-        message: 'Sikeres bejelentkezés!',
-        user: { 
-
-            username: user.felhasznalonev  // Ez a fontos rész!
-        }
-    });
+          success: true,
+          message: 'Sikeres bejelentkezés!',
+          user: {
+              username: user.felhasznalonev,
+              email: user.email
+          }
+      });
 
   } catch (error) {
       console.error('Server error:', error);
       return res.status(500).json({ error: 'Szerver hiba!' });
   }
 });
+
+
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 

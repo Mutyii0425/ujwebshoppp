@@ -17,7 +17,9 @@ import {
   MenuList,
   MenuItem,
   Badge,
-  Grid
+  Grid,
+  Card,
+  CardContent
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -35,11 +37,13 @@ const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
 const cartItemCount = cartItems.reduce((total, item) => total + item.mennyiseg, 0);
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
+  const [showUploadInfo, setShowUploadInfo] = useState(true);
   const [description, setDescription] = useState('');
   const [size, setSize] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [darkMode, setDarkMode] = useState(true);
   const [sideMenuActive, setSideMenuActive] = useState(false);
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const navigate = useNavigate();
     const handleSubmit = async () => {
@@ -88,6 +92,10 @@ const cartItemCount = cartItems.reduce((total, item) => total + item.mennyiseg, 
       }
     };
     checkLoginStatus();
+  }, []);
+
+  useEffect(() => {
+    setShowUploadInfo(true);
   }, []);
 
   useEffect(() => {
@@ -153,6 +161,23 @@ const handleCartClick = () => {
     navigate('/kosar');
 };
 
+const textFieldStyle = {
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+    borderRadius: 2,
+    color: darkMode ? '#fff' : '#000'
+  },
+  '& .MuiInputLabel-root': {
+    color: darkMode ? '#fff' : '#000'
+  },
+  '& .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'rgba(255,255,255,0.3)'
+  },
+  '&:hover .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'rgba(255,255,255,0.5)'
+  }
+};
+
 <input
     type="file"
     hidden
@@ -182,9 +207,14 @@ const handleListKeyDown = (event) => {
   };
 
   const handleLogout = () => {
+    setShowLogoutAlert(true);
+    setOpen(false);
+  };
+
+  const confirmLogout = () => {
     localStorage.removeItem('user');
     setIsLoggedIn(false);
-    setOpen(false);
+    setShowLogoutAlert(false);
     navigate('/sign');
   };
 
@@ -365,252 +395,367 @@ const handleListKeyDown = (event) => {
         />
       </FormGroup>
 
-      <Container maxWidth="md" sx={{ mt: 8, mb: 4 }}>
-        <Paper
+
+
+   <Container maxWidth="lg" sx={{ mt: 10, mb: 2 }}>
+  <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
+    <Card elevation={8} sx={{
+      flex: 2,
+      backgroundColor: darkMode ? '#333' : '#fff',
+      borderRadius: 3,
+      padding: 4,
+      transition: 'transform 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-5px)'
+      }
+    }}>
+      <Typography variant="h4" gutterBottom sx={{ 
+        color: darkMode ? '#fff' : '#333',
+        borderBottom: '2px solid',
+        borderColor: darkMode ? '#555' : '#ddd',
+        paddingBottom: 2,
+        marginBottom: 4
+      }}>
+        Ruha feltöltése
+      </Typography>
+
+      <Box
+        sx={{
+          border: '2px dashed',
+          borderColor: darkMode ? 'grey.500' : 'grey.300',
+          borderRadius: 2,
+          p: 3,
+          mb: 3,
+          textAlign: 'center',
+          cursor: 'pointer',
+          backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+        }}
+        onClick={() => fileInputRef.current.click()}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        <input
+          type="file"
+          hidden
+          multiple
+          ref={fileInputRef}
+          onChange={handleImageUpload}
+          accept="image/*"
+        />
+        
+        {selectedImages && selectedImages.length > 0 ? (
+  <Grid container spacing={3}>
+    {selectedImages.map((image, index) => (
+      <Grid item xs={12} sm={6} md={4} key={index}>
+        <Box sx={{
+          position: 'relative',
+          height: '300px',  // Increased height
+          width: '100%',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}>
+          <img
+            src={image}
+            alt={`Feltöltött kép ${index + 1}`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain'  // Changed to contain
+            }}
+          />
+        </Box>
+      </Grid>
+    ))}
+  </Grid>
+) : (
+          <Box>
+            <CloudUploadIcon sx={{ fontSize: 60, mb: 2, color: darkMode ? 'grey.400' : 'grey.600' }} />
+            <Typography sx={{ color: darkMode ? 'grey.400' : 'grey.600' }}>
+              Húzd ide a képeket vagy kattints a feltöltéshez
+            </Typography>
+          </Box>
+        )}
+      </Box>
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <FormControl fullWidth sx={textFieldStyle}>
+          <InputLabel>Kategória</InputLabel>
+          <Select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            {categories.map((category) => (
+              <MenuItem key={category.cs_azonosito} value={category.cs_azonosito}>
+                {category.cs_nev}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <TextField
+          fullWidth
+          label="Ruha neve"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          sx={textFieldStyle}
+        />
+
+        <TextField
+          fullWidth
+          label="Ár"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          sx={textFieldStyle}
+        />
+
+        <TextField
+          fullWidth
+          label="Leírás"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          sx={textFieldStyle}
+        />
+
+        <FormControl fullWidth sx={textFieldStyle}>
+          <InputLabel>Méret</InputLabel>
+          <Select
+            value={size}
+            onChange={(e) => setSize(e.target.value)}
+          >
+            <MenuItem value="XS">XS</MenuItem>
+            <MenuItem value="S">S</MenuItem>
+            <MenuItem value="M">M</MenuItem>
+            <MenuItem value="L">L</MenuItem>
+            <MenuItem value="XL">XL</MenuItem>
+            <MenuItem value="XXL">XXL</MenuItem>
+          </Select>
+        </FormControl>
+
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
           sx={{
-            p: 4,
-            backgroundColor: darkMode ? '#333' : '#fff',
-            color: darkMode ? 'white' : 'black',
+            py: 2,
+            mt: 2,
+            backgroundColor: darkMode ? '#90caf9' : '#1976d2',
+            '&:hover': {
+              backgroundColor: darkMode ? '#42a5f5' : '#1565c0',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+            },
+            transition: 'all 0.2s ease'
           }}
         >
-          <Typography variant="h4" gutterBottom align="center">
-            Ruha feltöltése
-          </Typography>
-
-          <Box
-            sx={{
-              border: '2px dashed',
-              borderColor: darkMode ? 'grey.500' : 'grey.300',
-              borderRadius: 2,
-              p: 3,
-              mb: 3,
-              textAlign: 'center',
-              cursor: 'pointer',
-            }}
-            onClick={() => fileInputRef.current.click()}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            <input
-              type="file"
-              hidden
-              multiple
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              accept="image/*"
-            />
-            
-            {selectedImages && selectedImages.length > 0 ? (
-              <Grid container spacing={2}>
-                {selectedImages.map((image, index) => (
-                  <Grid item xs={6} sm={4} key={index}>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        height: '200px',
-                        width: '100%',
-                        borderRadius: '8px',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <img
-                        src={image}
-                        alt={`Feltöltött kép ${index + 1}`}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
-                        }}
-                      />
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            ) : (
-              <Box>
-                <CloudUploadIcon sx={{ fontSize: 60, mb: 2 }} />
-                <Typography>
-                  Húzd ide a képeket vagy kattints a feltöltéshez
-                </Typography>
-              </Box>
-            )}
-          </Box>
-            <FormControl fullWidth margin="normal" sx={{ mb: 2 }}>
-              <InputLabel sx={{ 
-                color: darkMode ? 'grey.300' : 'grey.700'
-              }}>Kategória</InputLabel>
-              <Select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                sx={{
-                  color: darkMode ? 'white' : 'black',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: darkMode ? 'grey.500' : 'grey.300',
-                  },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: darkMode ? 'grey.400' : 'grey.400',
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: darkMode ? 'grey.300' : 'grey.500',
-                  },
-                  '& .MuiSelect-icon': {
-                    color: darkMode ? 'grey.300' : 'grey.700',
-                  }
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      bgcolor: darkMode ? '#333' : '#fff',
-                      '& .MuiMenuItem-root': {
-                        color: darkMode ? 'white' : 'black',
-                        '&:hover': {
-                          bgcolor: darkMode ? '#444' : '#f5f5f5',
-                        },
-                        '&.Mui-selected': {
-                          bgcolor: darkMode ? '#555' : '#e0e0e0',
-                          '&:hover': {
-                            bgcolor: darkMode ? '#666' : '#d5d5d5',
-                          }
-                        }
-                      }
-                    }
-                  }
-                }}
-              >
-                {categories.map((category) => (
-                  <MenuItem key={category.cs_azonosito} value={category.cs_azonosito}>
-                    {category.cs_nev}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              margin="normal"
-              sx={{ mb: 2 }}
-              label="Ruha neve"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: darkMode ? 'white' : 'black',
-                  '& fieldset': {
-                    borderColor: darkMode ? 'grey.500' : 'grey.300',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: darkMode ? 'grey.300' : 'grey.700',
-                },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              margin="normal"
-              sx={{ mb: 2 }}
-              label="Ár"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: darkMode ? 'white' : 'black',
-                  '& fieldset': {
-                    borderColor: darkMode ? 'grey.500' : 'grey.300',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: darkMode ? 'grey.300' : 'grey.700',
-                },
-              }}
-            />
-
-            <TextField
-              fullWidth
-              margin="normal"
-              sx={{ mb: 2 }}
-              label="Leírás"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: darkMode ? 'white' : 'black',
-                  '& fieldset': {
-                    borderColor: darkMode ? 'grey.500' : 'grey.300',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: darkMode ? 'grey.300' : 'grey.700',
-                },
-              }}
-            />
-              <TextField
-                select
-                fullWidth
-                margin="normal"
-                sx={{ 
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    color: darkMode ? 'white' : 'black',
-                    '& fieldset': {
-                      borderColor: darkMode ? 'grey.500' : 'grey.300',
-                    },
-                    '& .MuiSelect-icon': {
-                      color: darkMode ? 'white' : 'black',
-                    }
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: darkMode ? 'grey.300' : 'grey.700',
-                  }
-                }}
-                label="Méret"
-                value={size}
-                onChange={(e) => setSize(e.target.value)}
-                SelectProps={{
-                  MenuProps: {
-                    PaperProps: {
-                      sx: {
-                        bgcolor: darkMode ? '#333' : '#fff',
-                        '& .MuiMenuItem-root': {
-                          color: darkMode ? 'white' : 'black',
-                          '&:hover': {
-                            bgcolor: darkMode ? '#444' : '#f5f5f5',
-                          },
-                          '&.Mui-selected': {
-                            bgcolor: darkMode ? '#555' : '#e0e0e0',
-                            '&:hover': {
-                              bgcolor: darkMode ? '#666' : '#d5d5d5',
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }}
-              >
-                <MenuItem value="XS">XS</MenuItem>
-                <MenuItem value="S">S</MenuItem>
-                <MenuItem value="M">M</MenuItem>
-                <MenuItem value="L">L</MenuItem>
-                <MenuItem value="XL">XL</MenuItem>
-                <MenuItem value="XXL">XXL</MenuItem>
-              </TextField>
-      <Button
-    onClick={handleSubmit}
-    variant="contained"
-    fullWidth
+          Feltöltés
+        </Button>
+      </Box>
+    </Card>
+  </Box>
+</Container>
+      {showLogoutAlert && (
+  <Box
     sx={{
-      mt: 3,
-      mb: 2,
-      backgroundColor: darkMode ? '#555' : 'primary.main',
-      '&:hover': {
-        backgroundColor: darkMode ? '#666' : 'primary.dark',
-      }
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 1400,
+      animation: 'popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      '@keyframes popIn': {
+        '0%': {
+          opacity: 0,
+          transform: 'translate(-50%, -50%) scale(0.5)',
+        },
+        '50%': {
+          transform: 'translate(-50%, -50%) scale(1.05)',
+        },
+        '100%': {
+          opacity: 1,
+          transform: 'translate(-50%, -50%) scale(1)',
+        },
+      },
     }}
   >
-    Feltöltés
-  </Button>
-        </Paper>
-      </Container>
+    <Card
+      sx={{
+        minWidth: 350,
+        backgroundColor: darkMode ? 'rgba(45, 45, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        color: darkMode ? '#fff' : '#000',
+        boxShadow: darkMode 
+          ? '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)' 
+          : '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+        borderRadius: '20px',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #00C853, #B2FF59)',
+          animation: 'loadingBar 2s ease-in-out',
+          '@keyframes loadingBar': {
+            '0%': { width: '0%' },
+            '100%': { width: '100%' }
+          }
+        }}
+      />
+      <CardContent sx={{ p: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              mb: 1,
+              background: darkMode 
+              ? 'linear-gradient(45deg, #90caf9, #42a5f5)' 
+              : 'linear-gradient(45deg, #1976d2, #1565c0)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Kijelentkezés
+          </Typography>
+          <Typography variant="body1" sx={{ color: darkMode ? '#aaa' : '#666' }}>
+            Biztosan ki szeretnél jelentkezni?
+          </Typography>
+        </Box>
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            gap: 2,
+            justifyContent: 'space-between'
+          }}
+        >
+          <Button
+            onClick={() => setShowLogoutAlert(false)}
+            sx={{
+              flex: 1,
+              py: 1.5,
+              borderRadius: '12px',
+              backgroundColor: darkMode ? 'rgba(144, 202, 249, 0.1)' : 'rgba(25, 118, 210, 0.1)',
+              color: darkMode ? '#90caf9' : '#1976d2',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: darkMode ? 'rgba(144, 202, 249, 0.2)' : 'rgba(25, 118, 210, 0.2)',
+                transform: 'translateY(-2px)',
+              }
+            }}
+          >
+            Mégse
+          </Button>
+          <Button
+            onClick={confirmLogout}
+            sx={{
+              flex: 1,
+              py: 1.5,
+              borderRadius: '12px',
+              background: darkMode 
+              ? 'linear-gradient(45deg, #90caf9, #42a5f5)' 
+              : 'linear-gradient(45deg, #1976d2, #1565c0)',
+              color: '#fff',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+              }
+            }}
+          >
+            Kijelentkezés
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
+  </Box>
+)}
+
+{showUploadInfo && (
+  <Box
+    sx={{
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 1400,
+      width: '95%',
+      maxWidth: 600,
+    }}
+  >
+    <Card sx={{
+      backgroundColor: darkMode ? 'rgba(45, 45, 45, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+      color: darkMode ? '#fff' : '#000',
+      borderRadius: 4,
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+      overflow: 'hidden'
+    }}>
+      <Box sx={{
+        height: '4px',
+        background: 'linear-gradient(90deg, #2196F3, #64B5F6)',
+      }} />
+      
+      <Box sx={{ p: 4 }}>
+        <Typography variant="h4" sx={{ 
+          mb: 3, 
+          fontWeight: 'bold',
+          textAlign: 'center',
+          color: darkMode ? '#90CAF9' : '#1976D2'
+        }}>
+          Feltöltési követelmények
+        </Typography>
+
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2, color: darkMode ? '#81D4FA' : '#0D47A1' }}>
+            Képfeltöltés:
+          </Typography>
+          <Box sx={{ pl: 2, mb: 2 }}>
+            <Typography sx={{ mb: 1 }}>• Ajánlott képméret: 1200x1200 pixel</Typography>
+            <Typography sx={{ mb: 1 }}>• Maximum fájlméret: 8MB</Typography>
+            <Typography>• Elfogadott formátumok: JPG, PNG</Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2, color: darkMode ? '#81D4FA' : '#0D47A1' }}>
+            Termékadatok:
+          </Typography>
+          <Box sx={{ pl: 2 }}>
+            <Typography sx={{ mb: 1 }}>• Pontos terméknév megadása</Typography>
+            <Typography sx={{ mb: 1 }}>• Valós ár feltüntetése</Typography>
+            <Typography sx={{ mb: 1 }}>• Részletes termékleírás</Typography>
+            <Typography>• Megfelelő méret kiválasztása</Typography>
+          </Box>
+        </Box>
+
+        <Button 
+          fullWidth
+          variant="contained"
+          onClick={() => setShowUploadInfo(false)}
+          sx={{
+            mt: 3,
+            py: 2,
+            backgroundColor: darkMode ? '#90CAF9' : '#1976D2',
+            fontSize: '1.1rem',
+            '&:hover': {
+              backgroundColor: darkMode ? '#64B5F6' : '#1565C0',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Értettem
+        </Button>
+      </Box>
+    </Card>
+  </Box>
+)}
+
       <Footer />
     </div>
   );

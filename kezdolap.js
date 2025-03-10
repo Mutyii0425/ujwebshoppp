@@ -15,12 +15,14 @@ import {
   MenuItem,
   MenuList,
   Card,
+  Dialog,
   CardContent,
   Stack,
   Container,
   Style
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+
 import CloseIcon from '@mui/icons-material/Close';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import logo2 from './logo2.png';
@@ -29,18 +31,243 @@ import pulcsik from './pulcsik.png';
 import gatyak from './gatyak.png';
 import Footer from './footer';
 import Menu from './menu2';
+
+
+
 import { useNavigate } from 'react-router-dom';
   const Home = () => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [sideMenuActive, setSideMenuActive] = useState(false);
     const [darkMode, setDarkMode] = useState(true);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [open, setOpen] = useState(false);
     const anchorRef = useRef(null);
     const navigate = useNavigate();
     const [userName, setUserName] = useState('');
+    const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+    const [wonPrize, setWonPrize] = useState('')
+    const [spinComplete, setSpinComplete] = useState(false);
+    const [showLogoutAlert, setShowLogoutAlert] = useState(false);
 
+    
+    const [initialPosition, setInitialPosition] = useState({
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)'
+    });
+
+    useEffect(() => {
+      const updatePosition = () => {
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        
+        setInitialPosition({
+          top: `${viewportHeight / 2}px`,
+          left: `${viewportWidth / 2}px`,
+          transform: 'translate(-50%, -50%)'
+        });
+      };
+    
+      updatePosition();
+      window.addEventListener('resize', updatePosition);
+    
+      return () => window.removeEventListener('resize', updatePosition);
+    }, []);
+    
+    
+
+    const prizes = [
+      { option: 'Nincs nyeremény', style: { backgroundColor: '#34495E', textColor: '#fff' }},
+      { option: '10% kedvezmény', style: { backgroundColor: '#2ECC71', textColor: '#fff' }},
+      { option: '5% kedvezmény', style: { backgroundColor: '#34495E', textColor: '#fff' }},
+      { option: '25% kedvezmény', style: { backgroundColor: '#2ECC71', textColor: '#fff' }},
+      { option: '20% kedvezmény', style: { backgroundColor: '#34495E', textColor: '#fff' }},
+      { option: '15% kedvezmény', style: { backgroundColor: '#2ECC71', textColor: '#fff' }}
+    ];
+    
+    const saveCouponToDatabase = async (coupon) => {
+      const userData = JSON.parse(localStorage.getItem('user'));
+      try {
+        const response = await fetch('http://localhost:4000/update-coupon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: userData.email,
+            coupon: coupon
+          })
+        });
+        if (response.ok) {
+          userData.kupon = coupon;
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+      } catch (error) {
+        console.error('Kupon mentési hiba:', error);
+      }
+    };
+    
+    const CouponAlert = ({ open, onClose, darkMode }) => {
+      const [currentPrize, setCurrentPrize] = useState('');
+      const [isSpinning, setIsSpinning] = useState(false);
+  ;
+    
+  const spinCoupon = () => {
+    setIsSpinning(true);
+    let spins = 0;
+    const maxSpins = 30;
+    const interval = setInterval(() => {
+      const randomPrize = prizes[Math.floor(Math.random() * prizes.length)].option;
+      setCurrentPrize(randomPrize);
+      spins++;
+      
+      if (spins >= maxSpins) {
+        clearInterval(interval);
+        const finalPrize = prizes[Math.floor(Math.random() * prizes.length)].option;
+        
+        // Update user data with both prize and spin status
+        const user = JSON.parse(localStorage.getItem('user'));
+        user.hasWonPrize = true;
+        user.hasSpun = true; // Add this flag
+        user.kupon = finalPrize;
+        delete user.isNewRegistration;
+        localStorage.setItem('user', JSON.stringify(user));
+  
+        setCurrentPrize(finalPrize);
+        setWonPrize(finalPrize);
+        setShowWelcomeDialog(false);
+        
+        setTimeout(() => {
+          setIsSpinning(false);
+          setTimeout(() => {
+            saveCouponToDatabase(finalPrize);
+            setShowSuccessAlert(true);
+            onClose();
+          }, 800);
+        }, 10);
+      }
+    }, 100);
+  };
+  
+    
+      return (
+        <Dialog
+          open={open}
+          sx={{
+            '& .MuiDialog-paper': {
+              backgroundColor: darkMode ? '#1E1E1E' : '#fff',
+              borderRadius: '25px',
+              padding: '3rem',
+              minWidth: '450px',
+              textAlign: 'center',
+              animation: 'fadeIn 0.3s ease-out',
+              '@keyframes fadeIn': {
+                from: { opacity: 0, transform: 'translateY(-20px)' },
+                to: { opacity: 1, transform: 'translateY(0)' }
+              }
+            }
+          }}
+        >
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              color: '#60BA97', 
+              mb: 3,
+              animation: 'slideDown 0.5s ease-out',
+              '@keyframes slideDown': {
+                from: { opacity: 0, transform: 'translateY(-20px)' },
+                to: { opacity: 1, transform: 'translateY(0)' }
+              }
+            }}
+          >
+            Nyerj Kedvezményt!
+          </Typography>
+          
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              color: darkMode ? '#fff' : '#333', 
+              mb: 4,
+              transition: 'all 0.3s ease',
+              transform: isSpinning ? 'scale(1.1)' : 'scale(1)',
+              animation: isSpinning ? 'pulse 0.5s infinite alternate' : 'none',
+              '@keyframes pulse': {
+                from: { opacity: 0.8, transform: 'scale(1)' },
+                to: { opacity: 1, transform: 'scale(1.1)' }
+              }
+            }}
+          >
+            {isSpinning ? currentPrize : 'Kattints a sorsoláshoz!'}
+          </Typography>
+    
+          <Button
+            onClick={spinCoupon}
+            disabled={isSpinning}
+            sx={{
+              background: 'linear-gradient(45deg, #60BA97, #4e9d7e)',
+              padding: '15px 40px',
+              color: '#fff',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                transform: 'scale(1.05)',
+                boxShadow: '0 6px 20px rgba(96,186,151,0.4)'
+              },
+              '&:disabled': {
+                background: 'linear-gradient(45deg, #60BA97, #4e9d7e)',
+                opacity: 0.7
+              }
+            }}
+          >
+            {isSpinning ? 'Sorsolás...' : 'Sorsol'}
+          </Button>
+    
+          <IconButton
+            onClick={onClose}
+            sx={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              color: darkMode ? '#60BA97' : '#4e9d7e',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                transform: 'rotate(90deg)',
+                color: '#60BA97'
+              }
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Dialog>
+        
+      );
+    };
+    
+    
+    
+    useEffect(() => {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        // Only show welcome dialog if new registration AND hasn't spun yet
+        if (user.isNewRegistration && !user.hasSpun) {
+          setShowWelcomeDialog(true);
+        }
+      }
+    }, []);
+    
+  
+    const handleSpinComplete = (prize) => {
+      setSpinComplete(true);
+      setShowWelcomeDialog(false);
+      // Itt kezeljük a nyereményt
+      const user = JSON.parse(localStorage.getItem('user'));
+      user.hasWonPrize = true;
+      delete user.isNewRegistration;
+      localStorage.setItem('user', JSON.stringify(user));
+    };
+  
+   
+    
+    
     const images = [
       {
         img: polok,
@@ -170,8 +397,14 @@ import { useNavigate } from 'react-router-dom';
           }
         }, 4500);
 
+        
+        
+        
+        
+        
         return () => clearInterval(timer);
       }, [isAnimating]);  
+
     return (
       <div style={{
         ...styles.root,
@@ -179,6 +412,8 @@ import { useNavigate } from 'react-router-dom';
         color: darkMode ? 'white' : 'black',
         minHeight: '100vh',
       }}>
+        
+
         <Box
         sx={{
           position: 'fixed',
@@ -254,7 +489,7 @@ import { useNavigate } from 'react-router-dom';
   <ShoppingCartIcon />
 </IconButton>
 
-                <Button
+<Button
                   ref={anchorRef}
                   onClick={handleToggle}
                   sx={{
@@ -287,7 +522,12 @@ import { useNavigate } from 'react-router-dom';
                         <ClickAwayListener onClickAway={handleClose}>
                           <MenuList autoFocusItem={open} onKeyDown={handleListKeyDown}>
                             <MenuItem onClick={handleClose}>{userName} profilja</MenuItem>
-                            <MenuItem onClick={handleClose}>Fiókom</MenuItem>
+                            <MenuItem onClick={() => {
+      handleClose();
+      navigate('/fiokom');
+    }}>
+      Fiókom
+    </MenuItem>
                             <MenuItem onClick={handleLogout}>Kijelentkezés</MenuItem>
                           </MenuList>
                         </ClickAwayListener>
@@ -619,30 +859,31 @@ import { useNavigate } from 'react-router-dom';
 </style>
 
 </Box>
+
 {showLogoutAlert && (
   <Box
-    sx={{
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      zIndex: 1400,
-      animation: 'popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-      '@keyframes popIn': {
-        '0%': {
-          opacity: 0,
-          transform: 'translate(-50%, -50%) scale(0.5)',
-        },
-        '50%': {
-          transform: 'translate(-50%, -50%) scale(1.05)',
-        },
-        '100%': {
-          opacity: 1,
-          transform: 'translate(-50%, -50%) scale(1)',
-        },
+  sx={{
+    position: 'fixed',
+    top: initialPosition.top,
+    left: initialPosition.left,
+    transform: initialPosition.transform,
+    zIndex: 1400,
+    animation: 'popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+    '@keyframes popIn': {
+      '0%': {
+        opacity: 0,
+        transform: 'translate(-50%, -50%) scale(0.5)',
       },
-    }}
-  >
+      '50%': {
+        transform: 'translate(-50%, -50%) scale(1.05)',
+      },
+      '100%': {
+        opacity: 1,
+        transform: initialPosition.transform,
+      },
+    },
+  }}
+>
     <Card
       sx={{
         minWidth: 350,
@@ -739,13 +980,65 @@ import { useNavigate } from 'react-router-dom';
       </CardContent>
     </Card>
   </Box>
-)}        
+)}
+
+ 
+
+
+<CouponAlert 
+  open={showWelcomeDialog} 
+  onClose={() => setShowWelcomeDialog(false)}
+  darkMode={darkMode}
+/>
+
+<Dialog
+  open={showSuccessAlert}
+  onClose={() => setShowSuccessAlert(false)}
+  sx={{
+    '& .MuiDialog-paper': {
+      backgroundColor: darkMode ? '#1E1E1E' : '#fff',
+      borderRadius: '25px',
+      padding: '2rem',
+      minWidth: '400px',
+      textAlign: 'center',
+      animation: 'popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      '@keyframes popIn': {
+        '0%': { transform: 'scale(0.8)', opacity: 0 },
+        '100%': { transform: 'scale(1)', opacity: 1 }
+      }
+    }
+  }}
+>
+  <Typography variant="h5" sx={{ color: '#60BA97', mb: 2 }}>
+    Gratulálunk!
+  </Typography>
+  <Typography variant="body1" sx={{ color: darkMode ? '#fff' : '#333', mb: 3 }}>
+    Nyereményed: {wonPrize}
+  </Typography>
+  <Button
+    onClick={() => setShowSuccessAlert(false)}
+    sx={{
+      background: 'linear-gradient(45deg, #60BA97, #4e9d7e)',
+      color: '#fff',
+      '&:hover': { transform: 'scale(1.05)' }
+    }}
+  >
+    Rendben
+  </Button>
+</Dialog>
+
+<CouponAlert 
+  open={showWelcomeDialog} 
+  onClose={() => setShowWelcomeDialog(false)}
+  darkMode={darkMode}
+  onSpinComplete={handleSpinComplete}
+/>
+
 <Footer />
+
       </div>
     );
 };
 
 export default Home;
-
-
 

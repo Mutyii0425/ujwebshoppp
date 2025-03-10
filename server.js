@@ -53,9 +53,16 @@ app.post('/usertermekek', (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   
-  db.query(query, [kategoriaId, ar, nev, leiras, meret, imageUrl, JSON.stringify(images)], (err, result) => {
+  db.query(query, [
+    kategoriaId, 
+    ar, 
+    nev, 
+    leiras, 
+    meret,
+    imageUrl,
+    images // A további képek JSON formátumban
+  ], (err, result) => {
     if (err) {
-      console.log('SQL error:', err);
       res.status(500).json({ error: err.message });
       return;
     }

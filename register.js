@@ -1,38 +1,33 @@
 import express from 'express';
-import mysql from 'mysql2/promise'; 
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import bcrypt from 'bcrypt';
+import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
-
-dotenv.config();
+import cors from 'cors';
+import mysql from 'mysql2/promise';
+import bcrypt from 'bcrypt';
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+app.use(cors());
+app.use(express.json());
 
-app.use(bodyParser.json());
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
-}));
+dotenv.config({ path: './backend.env' });
 
-// 📌 Adatbázis kapcsolat
+// Database connection
 const db = await mysql.createConnection({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'webshoppp',
   password: process.env.DB_PASS || 'Premo900',
-  database: process.env.DB_NAME || 'webshoppp',
+  database: process.env.DB_NAME || 'webshoppp'
 });
 
-console.log('✅ Connected to MySQL Database');
+console.log('Connected to database');
+
+// SendGrid setup
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // 🔹 Regisztráció
 app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: 'Hiányzó adatok!' });
-  }
-
+  
   try {
     const [users] = await db.execute('SELECT * FROM user WHERE email = ?', [email]);
     if (users.length > 0) {
@@ -42,29 +37,32 @@ app.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     await db.execute('INSERT INTO user (felhasznalonev, email, jelszo) VALUES (?, ?, ?)', [name, email, hashedPassword]);
 
-    console.log(`✅ Felhasználó regisztrálva: ${email}`);
-    res.status(201).json({ message: 'Sikeres regisztráció!' });
+    // Return user data for automatic login
+    res.status(201).json({ 
+      message: 'Sikeres regisztráció!',
+      user: {
+        username: name,
+        email: email
+      }
+    });
   } catch (error) {
-    console.error('🚨 Hiba regisztráció közben:', error.message);
     res.status(500).json({ error: 'Adatbázis hiba!' });
   }
 });
 
-// 🔹 Bejelentkezés
+
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   
-  console.log('Login attempt received:', { email, password });
-
   try {
       const [rows] = await db.execute('SELECT * FROM user WHERE email = ?', [email]);
-      console.log('Database query result:', rows);
 
       if (rows.length === 0) {
           return res.status(400).json({ error: 'Felhasználó nem található!' });
       }
 
       const user = rows[0];
+      // Mivel a regisztráció működik, használjuk ugyanazt a jelszó ellenőrzést
       const isMatch = await bcrypt.compare(password, user.jelszo);
 
       if (!isMatch) {
@@ -72,13 +70,13 @@ app.post('/login', async (req, res) => {
       }
 
       return res.json({ 
-        success: true,
-        message: 'Sikeres bejelentkezés!',
-        user: { 
-
-            username: user.felhasznalonev  // Ez a fontos rész!
-        }
-    });
+          success: true,
+          message: 'Sikeres bejelentkezés!',
+          user: {
+              username: user.felhasznalonev,
+              email: user.email
+          }
+      });
 
   } catch (error) {
       console.error('Server error:', error);
@@ -86,6 +84,99 @@ app.post('/login', async (req, res) => {
   }
 });
 
+
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+app.post('/send-confirmation', async (req, res) => {
+  const { email, name, orderId, orderItems, shippingDetails, totalPrice, discount, shippingCost } = req.body;
+  
+  const orderItemsList = orderItems.map(item => 
+    `<tr>
+      <td>${item.nev}</td>
+      <td>${item.mennyiseg} db</td>
+      <td>${item.ar.toLocaleString()} Ft</td>
+      <td>${(item.ar * item.mennyiseg).toLocaleString()} Ft</td>
+    </tr>`
+  ).join('');
+
+  const msg = {
+    to: email,
+    from: {
+      name: 'Adali Clothing',
+      email: 'adaliclothing@gmail.com'
+    },
+    subject: 'Rendelés visszaigazolás - Adali Clothing',
+    html: `
+      <h2>Kedves ${name}!</h2>
+      <p>Köszönjük a rendelését! Az alábbiakban találja a rendelés részleteit.</p>
+      
+      <h3>Rendelési azonosító: #${orderId}</h3>
+      
+      <h4>Rendelt termékek:</h4>
+      <table style="width:100%; border-collapse: collapse;">
+        <tr>
+          <th>Termék</th>
+          <th>Mennyiség</th>
+          <th>Egységár</th>
+          <th>Részösszeg</th>
+        </tr>
+        ${orderItemsList}
+      </table>
+
+      <h4>Szállítási adatok:</h4>
+      <p>
+        Név: ${name}<br>
+        Telefonszám: ${shippingDetails.phoneNumber}<br>
+        Cím: ${shippingDetails.zipCode} ${shippingDetails.city}, ${shippingDetails.address}
+      </p>
+
+      
+      <p>
+        Részösszeg: ${(totalPrice - discount).toLocaleString()} Ft<br>
+        Kedvezmény: ${discount.toLocaleString()} Ft<br>
+        Szállítási költség: ${shippingCost.toLocaleString()} Ft<br>
+        <strong>Fizetendő összeg: ${totalPrice.toLocaleString()} Ft</strong>
+      </p>
+    `
+  };
+
+  try {
+    console.log('Sending confirmation email...');
+    const result = await sgMail.send(msg);
+    console.log('Email sent successfully');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Email sending error:', error.response?.body);
+    res.status(500).json({ 
+      error: 'Email sending failed',
+      details: error.response?.body?.errors 
+    });
+  }
+});
+
+const PORT = 4000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port: ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+}); 
+
+
+// Add this endpoint for storing coupons
+app.post('/update-coupon', async (req, res) => {
+  const { email, coupon } = req.body;
+  
+  try {
+    await db.execute(
+      'UPDATE user SET kupon = ? WHERE email = ?',
+      [coupon, email]
+    );
+    
+    res.json({ 
+      success: true,
+      message: 'Kupon sikeresen elmentve'
+    });
+  } catch (error) {
+    console.error('Coupon update error:', error);
+    res.status(500).json({ error: 'Kupon mentési hiba' });
+  }
 });

@@ -284,20 +284,20 @@ import { useNavigate } from 'react-router-dom';
     const images = [
       {
         img: polok,
-        title: "Új kollekció érkezett!",
-        subtitle: "Fedezd fel a legújabb pólóinkat és találd meg a stílusodhoz illőt!",
-        imageStyle: {} 
+        title: "Friss drip érkezett!",
+        subtitle: "Dobd fel a szettjeid a legújabb kollekcióval! Ne maradj le róluk.",
+        imageStyle: {}
       },
       {
         img: gatyak,
-        title: "Nyári kollekció",
-        subtitle: "Könnyű, szellős darabok a meleg napokra",
+        title: "Nyári szettek",
+        subtitle: "Lazulós cuccok a forró napokra. Válaszd ki a stílusodhoz illőt!",
         imageStyle: { transform: 'translateY(-50px)' }
       },
       {
         img: pulcsik,
-        title: "Limitált széria",
-        subtitle: "Szerezd meg egyedi darabjainkat, amíg készleten vannak",
+        title: "Limited drip",
+        subtitle: "Limitált darabok, egyedi design. Csapj le rájuk, amíg van készleten!",
         imageStyle: {}
       }
     ];
@@ -770,7 +770,8 @@ import { useNavigate } from 'react-router-dom';
               marginTop: '10px',
             }}
           >
-            Nézd meg a felhasználók által feltöltött termékeket!
+            Csekk a legmenőbb felhasználó cuccokat! Találd meg a következő kedvenc ruhadarabod.
+
           </Typography>
           </Card>
         
@@ -828,7 +829,7 @@ import { useNavigate } from 'react-router-dom';
               marginTop: '10px',
             }}
           >
-            Nézd meg az összes termékünket
+            Nézd meg a teljes kollekciót! Tuti, hogy találsz valamit ami tetszik.
           </Typography>
           </Card>
           <Card
@@ -884,11 +885,35 @@ import { useNavigate } from 'react-router-dom';
                 marginTop: '10px',
               }}
             >
-              Töltsd fel a ruháidat
+              Dobd fel a saját cuccaidat! Legyél Te is az Adali Clothing része.
             </Typography>
           
           </Card>
           </div>
+
+          <Typography 
+  variant="h1" 
+  sx={{
+    textAlign: 'center',
+    fontSize: '2.5rem',
+    fontWeight: 'bold',
+    background: darkMode 
+      ? 'linear-gradient(45deg,rgb(255, 255, 255),rgb(255, 255, 255))'
+      : 'linear-gradient(45deg,rgb(0, 0, 0),rgb(0, 0, 0))',
+    backgroundClip: 'text',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    margin: '80px 0',
+    animation: 'fadeIn 1s ease-out',
+    '@keyframes fadeIn': {
+      from: { opacity: 0, transform: 'translateY(20px)' },
+      to: { opacity: 1, transform: 'translateY(0)' }
+    }
+  }}
+>
+  Adali Clothing - A Te stílusod, a mi szenvedélyünk!
+</Typography>
+
         <Box
   sx={{
     display: 'flex',

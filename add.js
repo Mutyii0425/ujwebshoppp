@@ -46,34 +46,115 @@ const cartItemCount = cartItems.reduce((total, item) => total + item.mennyiseg, 
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const navigate = useNavigate();
-    const handleSubmit = async () => {
-      const termekAdatok = {
-        kategoriaId: parseInt(selectedCategory),
-        ar: parseInt(price),
-        nev: title,
-        leiras: description,
-        meret: size,
-        imageUrl: selectedImages[0],
-        images: selectedImages // Send as array
-      };
 
-      try {
-        const response = await fetch('http://localhost:5000/usertermekek', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(termekAdatok)
-        });
-
-        if (response.ok) {
-          alert('Sikeres feltöltés!');
-          navigate('/vinted');
-        }
-      } catch (error) {
-        console.error('Hiba:', error);
-      }
+  const handleSubmit = async () => {
+    const termekAdatok = {
+      kategoriaId: parseInt(selectedCategory),
+      ar: parseInt(price),
+      nev: title,
+      leiras: description,
+      meret: size,
+      imageUrl: selectedImages[0],
+      images: selectedImages
     };
+  
+    try {
+      const response = await fetch('http://localhost:5000/usertermekek', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(termekAdatok)
+      });
+  
+      if (response.ok) {
+        const alertBox = document.createElement('div');
+        alertBox.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: ${darkMode ? '#333' : '#fff'};
+          color: ${darkMode ? '#fff' : '#333'};
+          padding: 30px 50px;
+          border-radius: 15px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+          z-index: 9999;
+          animation: fadeIn 0.5s ease-in-out;
+          text-align: center;
+          min-width: 300px;
+          border: 1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
+          backdrop-filter: blur(10px);
+        `;
+  
+        alertBox.innerHTML = `
+          <div style="
+            width: 60px;
+            height: 60px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h3 style="
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: ${darkMode ? '#90caf9' : '#1976d2'};
+          ">Sikeres feltöltés!</h3>
+          <p style="
+            margin: 0;
+            font-size: 16px;
+            color: ${darkMode ? '#aaa' : '#666'};
+          ">Köszönjük, hogy használod az Adali Clothing-ot!</p>
+        `;
+  
+        document.body.appendChild(alertBox);
+  
+        setTimeout(() => {
+          alertBox.style.animation = 'fadeOut 0.5s ease-in-out';
+          setTimeout(() => {
+            document.body.removeChild(alertBox);
+            navigate('/vinted');
+          }, 500);
+        }, 2000);
+  
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes fadeIn {
+            from { 
+              opacity: 0; 
+              transform: translate(-50%, -60%) scale(0.8); 
+            }
+            to { 
+              opacity: 1; 
+              transform: translate(-50%, -50%) scale(1); 
+            }
+          }
+          @keyframes fadeOut {
+            from { 
+              opacity: 1; 
+              transform: translate(-50%, -50%) scale(1); 
+            }
+            to { 
+              opacity: 0; 
+              transform: translate(-50%, -40%) scale(0.8); 
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    } catch (error) {
+      console.error('Hiba:', error);
+    }
+  };
+  
   const [categories, setCategories] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [open, setOpen] = useState(false);
@@ -291,117 +372,47 @@ const handleListKeyDown = (event) => {
                   <ShoppingCartIcon />
                 </Badge>
               </IconButton>
-             <Button
-                               ref={anchorRef}
-                               onClick={handleToggle}
-                               sx={{
-                                 color: '#fff',
-                                 zIndex: 1300,
-                                 border: '1px solid #fff',
-                                 borderRadius: '5px',
-                                 padding: '5px 10px',
-                               }}
-                             >
-                               Profil
-                             </Button>
-                             <Popper
-               open={open}
-               anchorEl={anchorRef.current}
-               placement="bottom-start"
-               transition
-               disablePortal
-               sx={{ 
-                 zIndex: 1300,
-                 mt: 1, // Margin top for spacing
-                 '& .MuiPaper-root': {
-                   overflow: 'hidden',
-                   borderRadius: '12px',
-                   boxShadow: darkMode 
-                     ? '0 8px 32px rgba(0, 0, 0, 0.4)'
-                     : '0 8px 32px rgba(0, 0, 0, 0.1)',
-                   border: darkMode 
-                     ? '1px solid rgba(255, 255, 255, 0.1)'
-                     : '1px solid rgba(0, 0, 0, 0.05)',
-                 }
-               }}
-             >
-               {({ TransitionProps, placement }) => (
-                 <Grow
-                   {...TransitionProps}
-                   style={{
-                     transformOrigin: placement === 'bottom-start' ? 'left top' : 'left bottom',
-                   }}
-                 >
-                   <Paper
-                     sx={{
-                       backgroundColor: darkMode ? '#2d2d2d' : '#ffffff',
-                       minWidth: '200px',
-                     }}
-                   >
-                     <ClickAwayListener onClickAway={handleClose}>
-                       <MenuList 
-                         autoFocusItem={open} 
-                         onKeyDown={handleListKeyDown}
-                         sx={{ py: 1 }}
-                       >
-                         <MenuItem 
-                           onClick={handleClose}
-                           sx={{
-                             py: 1.5,
-                             px: 2,
-                             color: darkMode ? '#fff' : '#333',
-                             '&:hover': {
-                               backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.04)',
-                             },
-                             gap: 2,
-                           }}
-                         >
-                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                             {userName} profilja
-                           </Typography>
-                         </MenuItem>
-             
-                         <MenuItem 
-                           onClick={() => {
-                             handleClose();
-                             navigate('/fiokom');
-                           }}
-                           sx={{
-                             py: 1.5,
-                             px: 2,
-                             color: darkMode ? '#fff' : '#333',
-                             '&:hover': {
-                               backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.04)',
-                             },
-                             gap: 2,
-                           }}
-                         >
-                           <Typography variant="body1">Fiókom</Typography>
-                         </MenuItem>
-             
-                         <MenuItem 
-                           onClick={handleLogout}
-                           sx={{
-                             py: 1.5,
-                             px: 2,
-                             color: '#ff4444',
-                             '&:hover': {
-                               backgroundColor: 'rgba(255,68,68,0.1)',
-                             },
-                             gap: 2,
-                             borderTop: '1px solid',
-                             borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                             mt: 1,
-                           }}
-                         >
-                           <Typography variant="body1">Kijelentkezés</Typography>
-                         </MenuItem>
-                       </MenuList>
-                     </ClickAwayListener>
-                   </Paper>
-                 </Grow>
-               )}
-             </Popper>
+              <Button
+                ref={anchorRef}
+                onClick={handleToggle}
+                sx={{
+                  color: '#fff',
+                  zIndex: 1300,
+                  border: '1px solid #fff',
+                  borderRadius: '5px',
+                  padding: '5px 10px',
+                }}
+              >
+                Profil
+              </Button>
+              <Popper
+                open={open}
+                anchorEl={anchorRef.current}
+                placement="bottom-start"
+                transition
+                disablePortal
+                sx={{ zIndex: 1300 }}
+              >
+                {({ TransitionProps, placement }) => (
+                  <Grow
+                    {...TransitionProps}
+                    style={{
+                      transformOrigin:
+                        placement === 'bottom-start' ? 'left top' : 'left bottom',
+                    }}
+                  >
+                    <Paper>
+                      <ClickAwayListener onClickAway={handleClose}>
+                        <MenuList autoFocusItem={open} onKeyDown={handleListKeyDown}>
+                          <MenuItem onClick={handleClose}>{userName} profilja</MenuItem>
+                          <MenuItem onClick={handleClose}>Fiókom</MenuItem>
+                          <MenuItem onClick={handleLogout}>Kijelentkezés</MenuItem>
+                        </MenuList>
+                      </ClickAwayListener>
+                    </Paper>
+                  </Grow>
+                )}
+              </Popper>
             </Box>
           ) : (
             <>

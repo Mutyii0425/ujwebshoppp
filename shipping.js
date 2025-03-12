@@ -382,6 +382,8 @@ const finalPrice = totalPrice - discountAmount + 1590;
     size="large"
     onClick={handleSubmitOrder}
     sx={{
+      fontSize: '1.1rem',
+              fontWeight: 600,
       width: '55%', // Nagyobb szélesség
       py: 1.5,
       backgroundColor: darkMode ? '#666' : '#333',

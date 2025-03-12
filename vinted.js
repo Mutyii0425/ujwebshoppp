@@ -49,7 +49,7 @@ export default function Vinted() {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://localhost:5000/products');
+        const response = await fetch('http://localhost:5000/categories');
         const data = await response.json();
         await new Promise(resolve => setTimeout(resolve, 1500));
         setProducts(data);
@@ -61,7 +61,6 @@ export default function Vinted() {
     };
     fetchProducts();
   }, []);
-  
   
   useEffect(() => {
     const handleKeyPress = (event) => {
@@ -92,14 +91,9 @@ export default function Vinted() {
     fetchProducts();
   }, []);
 
-  const filteredProducts = selectedCategory 
-      ? products.filter(product => {
-          if (selectedCategory === 'Pólók') return product.kategoriaId === 4;
-          if (selectedCategory === 'Nadrágok') return product.kategoriaId === 2;
-          if (selectedCategory === 'Pulóverek') return product.kategoriaId === 5;
-          return true;
-        })
-      : products;
+  const filteredProducts = selectedCategory
+    ? products.filter(product => product.kategoriaId === selectedCategory)
+    : products;
 
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
@@ -223,110 +217,40 @@ export default function Vinted() {
                 </Badge>
               </IconButton>
               <Button
-                                ref={anchorRef}
-                                onClick={handleToggle}
-                                sx={{
-                                  color: '#fff',
-                                  zIndex: 1300,
-                                  border: '1px solid #fff',
-                                  borderRadius: '5px',
-                                  padding: '5px 10px',
-                                }}
-                              >
-                                Profil
-                              </Button>
-                              <Popper
+                ref={anchorRef}
+                onClick={handleToggle}
+                sx={{
+                  color: '#fff',
+                  zIndex: 1300,
+                  border: '1px solid #fff',
+                  borderRadius: '5px',
+                  padding: '5px 10px',
+                }}
+              >
+                Profil
+              </Button>
+              <Popper
                 open={open}
                 anchorEl={anchorRef.current}
                 placement="bottom-start"
                 transition
                 disablePortal
-                sx={{ 
-                  zIndex: 1300,
-                  mt: 1, // Margin top for spacing
-                  '& .MuiPaper-root': {
-                    overflow: 'hidden',
-                    borderRadius: '12px',
-                    boxShadow: darkMode 
-                      ? '0 8px 32px rgba(0, 0, 0, 0.4)'
-                      : '0 8px 32px rgba(0, 0, 0, 0.1)',
-                    border: darkMode 
-                      ? '1px solid rgba(255, 255, 255, 0.1)'
-                      : '1px solid rgba(0, 0, 0, 0.05)',
-                  }
-                }}
+                sx={{ zIndex: 1300 }}
               >
                 {({ TransitionProps, placement }) => (
                   <Grow
                     {...TransitionProps}
                     style={{
-                      transformOrigin: placement === 'bottom-start' ? 'left top' : 'left bottom',
+                      transformOrigin:
+                        placement === 'bottom-start' ? 'left top' : 'left bottom',
                     }}
                   >
-                    <Paper
-                      sx={{
-                        backgroundColor: darkMode ? '#2d2d2d' : '#ffffff',
-                        minWidth: '200px',
-                      }}
-                    >
+                    <Paper>
                       <ClickAwayListener onClickAway={handleClose}>
-                        <MenuList 
-                          autoFocusItem={open} 
-                          onKeyDown={handleListKeyDown}
-                          sx={{ py: 1 }}
-                        >
-                          <MenuItem 
-                            onClick={handleClose}
-                            sx={{
-                              py: 1.5,
-                              px: 2,
-                              color: darkMode ? '#fff' : '#333',
-                              '&:hover': {
-                                backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.04)',
-                              },
-                              gap: 2,
-                            }}
-                          >
-                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                              {userName} profilja
-                            </Typography>
-                          </MenuItem>
-              
-                          <MenuItem 
-                            onClick={() => {
-                              handleClose();
-                              navigate('/fiokom');
-                            }}
-                            sx={{
-                              py: 1.5,
-                              px: 2,
-                              color: darkMode ? '#fff' : '#333',
-                              '&:hover': {
-                                backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.04)',
-                              },
-                              gap: 2,
-                            }}
-                          >
-                            <Typography variant="body1">Fiókom</Typography>
-                          </MenuItem>
-              
-                          <MenuItem 
-                            onClick={handleLogout}
-                            sx={{
-                              py: 1.5,
-                              px: 2,
-                              color: '#ff4444',
-                              '&:hover': {
-                                backgroundColor: 'rgba(255,68,68,0.1)',
-                              },
-                              gap: 2,
-                              borderTop: '1px solid',
-                              borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                              mt: 1,
-                            }}
-                          >
-                            <Typography variant="body1">Kijelentkezés</Typography>
-                          </MenuItem>
+                        <MenuList autoFocusItem={open} onKeyDown={handleListKeyDown}>
+                          <MenuItem onClick={handleClose}>{userName} profilja</MenuItem>
+                          <MenuItem onClick={handleClose}>Fiókom</MenuItem>
+                          <MenuItem onClick={handleLogout}>Kijelentkezés</MenuItem>
                         </MenuList>
                       </ClickAwayListener>
                     </Paper>
@@ -406,66 +330,43 @@ export default function Vinted() {
         </Typography>
 
         <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    gap: 2, 
-                    mb: 4, 
-                    flexWrap: 'wrap',
-                    marginTop: '20px'
-                  }}>
-                    <Button 
-                      variant="contained"
-                      onClick={() => setSelectedCategory(null)}
-                      sx={{ 
-                        backgroundColor: !selectedCategory ? '#333' : '#555',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: !selectedCategory ? '#444' : '#666',
-                        }
-                      }}
-                    >
-                      Összes
-                    </Button>
-                    <Button
-                      variant="contained"
-                      onClick={() => setSelectedCategory('Pólók')}
-                      sx={{ 
-                        backgroundColor: selectedCategory === 'Pólók' ? '#333' : '#555',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: selectedCategory === 'Pólók' ? '#444' : '#666',
-                        }
-                      }}
-                    >
-                      Pólók
-                    </Button>
-                    <Button
-                      variant="contained"
-                      onClick={() => setSelectedCategory('Nadrágok')}
-                      sx={{ 
-                        backgroundColor: selectedCategory === 'Nadrágok' ? '#333' : '#555',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: selectedCategory === 'Nadrágok' ? '#444' : '#666',
-                        }
-                      }}
-                    >
-                      Nadrágok
-                    </Button>
-                    <Button
-                      variant="contained"
-                      onClick={() => setSelectedCategory('Pulóverek')}
-                      sx={{ 
-                        backgroundColor: selectedCategory === 'Pulóverek' ? '#333' : '#555',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: selectedCategory === 'Pulóverek' ? '#444' : '#666',
-                        }
-                      }}
-                    >
-                      Pulóverek
-                    </Button>
-                  </Box>
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: 2, 
+          mb: 4, 
+          flexWrap: 'wrap',
+          marginTop: '20px'
+        }}>
+          <Button 
+            variant="contained"
+            onClick={() => setSelectedCategory(null)}
+            sx={{ 
+              backgroundColor: !selectedCategory ? '#333' : '#555',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: !selectedCategory ? '#444' : '#666',
+              }
+            }}
+          >
+            Összes
+          </Button>
+          {categories.map((category) => (
+            <Button
+              key={category.cs_azonosito}
+              variant="contained"
+              onClick={() => setSelectedCategory(category.cs_azonosito)}
+              sx={{ 
+                backgroundColor: selectedCategory === category.cs_azonosito ? '#333' : '#555',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: selectedCategory === category.cs_azonosito ? '#444' : '#666',
+                }
+              }}
+            >
+              {category.cs_nev}
+            </Button>
+          ))}
+        </Box>
 
         {isLoading ? (
   <Box sx={{
@@ -486,16 +387,15 @@ export default function Vinted() {
     {filteredProducts.map((product) => (
       <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
         <Link to={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
-        <Card sx={{
-  height: '500px',
-  backgroundColor: darkMode ? '#333' : 'white',
-  color: darkMode ? 'white' : 'black',
-  transition: 'transform 0.2s',
-  border: darkMode ? '1px solid #fff' : '1px solid #000',
-  '&:hover': {
-    transform: 'scale(1.02)'
-  }
-}}>
+          <Card sx={{
+            height: '500px',
+            backgroundColor: darkMode ? '#333' : 'white',
+            color: darkMode ? 'white' : 'black',
+            transition: 'transform 0.2s',
+            '&:hover': {
+              transform: 'scale(1.02)'
+            }
+          }}>
             <Box sx={{ position: 'relative', height: '350px' }}>
               <CardMedia
                 component="img"

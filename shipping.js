@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Dialog, Zoom, CircularProgress } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { Rating } from '@mui/material';
 import {
   Box,
   Container,
@@ -33,6 +34,9 @@ const [orderData, setOrderData] = useState({
   telepules: '',
   kozterulet: ''
 });
+const [rating, setRating] = useState(0);
+const [comment, setComment] = useState('');
+
 
 // Then calculate discount amounts
 const discountAmount = Math.round((totalPrice * discountPercentage) / 100);
@@ -101,10 +105,7 @@ const finalPrice = totalPrice - discountAmount + 1590;
         // További kód...
         localStorage.removeItem('cartItems');
       
-        // Átirányítás 3 másodperc után
-        setTimeout(() => {
-          navigate('/kezdolap');
-        }, 3000);
+       
   
       } catch (error) {
         console.error('Rendelési hiba:', error);
@@ -114,7 +115,30 @@ const finalPrice = totalPrice - discountAmount + 1590;
     };
 
  
-
+    const saveRatingToDatabase = async (rating, comment) => {
+      try {
+        const userData = JSON.parse(localStorage.getItem('user'));
+        const response = await fetch('http://localhost:4000/save-rating', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            rating,
+            comment,
+            email: userData.email,
+            orderDate: new Date()
+          })
+        });
+        
+        if (response.ok) {
+          console.log('Értékelés sikeresen mentve');
+        }
+      } catch (error) {
+        console.error('Hiba az értékelés mentésekor:', error);
+      }
+    };
+    
   // Define textFieldStyle here
   const textFieldStyle = {
     '& .MuiOutlinedInput-root': {
@@ -407,30 +431,60 @@ const finalPrice = totalPrice - discountAmount + 1590;
               </Box>
             )}
 
-            {/* Dialog component */}
-            <Dialog
-              open={orderSuccess}
-              TransitionComponent={Zoom}
-              sx={{
-                '& .MuiDialog-paper': {
-                  backgroundColor: darkMode ? '#333' : '#fff',
-                  borderRadius: 3,
-                  padding: 4,
-                  textAlign: 'center'
-                }
-              }}
-            >
-              <CheckCircleIcon sx={{ fontSize: 60, color: '#4CAF50', mb: 2 }} />
-              <Typography variant="h5" sx={{ color: darkMode ? '#fff' : '#333', mb: 2 }}>
-                Köszönjük a rendelését!
-              </Typography>
-              <Typography sx={{ color: darkMode ? '#ccc' : '#666' }}>
-                A rendelés visszaigazolását elküldtük emailben.
-              </Typography>
-            </Dialog>
+            
+<Dialog
+  open={orderSuccess}
+  TransitionComponent={Zoom}
+  sx={{
+    '& .MuiDialog-paper': {
+      backgroundColor: darkMode ? '#333' : '#fff',
+      borderRadius: 3,
+      padding: 4,
+      textAlign: 'center',
+      minWidth: '400px'
+    }
+  }}
+>
+  <CheckCircleIcon sx={{ fontSize: 60, color: '#4CAF50', mb: 2 }} />
+  <Typography variant="h5" sx={{ color: darkMode ? '#fff' : '#333', mb: 2 }}>
+    Köszönjük a rendelését!
+  </Typography>
+  <Typography sx={{ color: darkMode ? '#ccc' : '#666', mb: 3 }}>
+    A rendelés visszaigazolását elküldtük emailben.
+  </Typography>
+  
+  <Box sx={{ mb: 3 }}>
+    <Typography sx={{ color: darkMode ? '#ccc' : '#666', mb: 2 }}>
+      Értékelje az élményét:
+    </Typography>
+    <Rating 
+      size="large"
+      value={rating}
+      onChange={(event, newValue) => setRating(newValue)}
+    />
+    <TextField
+      multiline
+      rows={4}
+      placeholder="Írd le véleményed..."
+      value={comment}
+      onChange={(e) => setComment(e.target.value)}
+      sx={{ mt: 2, width: '100%' }}
+    />
+    <Button 
+      onClick={() => {
+        saveRatingToDatabase(rating, comment);
+        navigate('/kezdolap');
+      }}
+      sx={{ mt: 2 }}
+    >
+      Értékelés küldése
+    </Button>
+  </Box>
+</Dialog>
           </Container>
         </Box>
       </ThemeProvider>
     )
   
 };
+

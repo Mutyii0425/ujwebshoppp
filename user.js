@@ -1,75 +1,32 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Box, 
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
   Container,
-  Typography,
-  Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  IconButton,
+  Box,
+  TextField,
   Button,
-  FormGroup,
-  FormControlLabel,
-  Switch,
-  Popper,
-  Grow,
-  Paper,
-  ClickAwayListener,
-  MenuList,
-  MenuItem
+  Typography,
+  Card,
+  Grid,
+  Divider,
+  IconButton,
+  Tooltip
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 import MenuIcon from '@mui/icons-material/Menu';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import Menu from './menu2';
-
+import Menu from '../menu2';
 
 export default function User() {
-  const [products, setProducts] = useState([]);
-  const [darkMode, setDarkMode] = useState(true);
   const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [sideMenuActive, setSideMenuActive] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState('');
-  const anchorRef = useRef(null);
 
   const toggleSideMenu = () => {
     setSideMenuActive(!sideMenuActive);
-  };
-
-  const handleCartClick = () => {
-    navigate('/kosar');
-  };
-
-  const handleToggle = () => {
-    setOpen((prevOpen) => !prevOpen);
-  };
-
-  const handleClose = (event = {}) => {
-    if (event.target && anchorRef.current && anchorRef.current.contains(event.target)) {
-      return;
-    }
-    setOpen(false);
-  };
-
-  const handleListKeyDown = (event) => {
-    if (event.key === 'Tab') {
-      event.preventDefault();
-      setOpen(false);
-    } else if (event.key === 'Escape') {
-      setOpen(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    setIsLoggedIn(false);
-    setOpen(false);
-    navigate('/sign');
   };
 
   useEffect(() => {
@@ -86,49 +43,85 @@ export default function User() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [navigate]);
-  
 
-   
-    useEffect(() => {
-      const fetchProducts = async () => {
-        try {
-          const response = await fetch('http://localhost:5000/products');
-          const data = await response.json();
-          setProducts(data);
-        } catch (error) {
-          console.log('Hiba:', error);
-        }
-      };
-      fetchProducts();
-    }, []);
-
-    const handleDelete = async (productId) => {
-      const megerosites = window.confirm("Biztosan törölni szeretnéd ezt a terméket?");
-    
-      if (megerosites) {
-        try {
-          const response = await fetch(`http://localhost:5000/products/${productId}`, {
-            method: 'DELETE'
-          });
-        
-          if (response.ok) {
-            setProducts(products.filter(product => product.id !== productId));
-          }
-        } catch (error) {
-          console.log('Törlési hiba:', error);
-        }
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/products');
+        const data = await response.json();
+        setProducts(data);
+      } catch (error) {
+        console.log('Hiba:', error);
       }
     };
+    fetchProducts();
+  }, []);
+
+  const handleDelete = async (productId) => {
+    if (window.confirm('Biztosan törölni szeretnéd ezt a terméket?')) {
+      try {
+        const response = await fetch(`http://localhost:5000/products/${productId}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          setProducts(products.filter(p => p.id !== productId));
+          alert('Termék sikeresen törölve!');
+        }
+      } catch (error) {
+        console.log('Törlési hiba:', error);
+      }
+    }
+  };
+
+  const handleEdit = (product) => {
+    setEditingProduct({
+      id: product.id,
+      nev: product.nev,
+      ar: product.ar,
+      leiras: product.leiras,
+      meret: product.meret,
+      imageUrl: product.imageUrl,
+      images: product.images
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/products/${editingProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ar: editingProduct.ar,
+          nev: editingProduct.nev,
+          leiras: editingProduct.leiras,
+          meret: editingProduct.meret,
+          imageUrl: editingProduct.imageUrl,
+          images: editingProduct.images
+        }),
+      });
+
+      if (response.ok) {
+        setProducts(products.map(p =>
+          p.id === editingProduct.id ? editingProduct : p
+        ));
+        setEditingProduct(null);
+        alert('Termék sikeresen frissítve!');
+      }
+    } catch (error) {
+      console.log('Hiba:', error);
+    }
+  };
+
   return (
-    <Box sx={{ 
-      backgroundColor: darkMode ? '#333' : '#f5f5f5',
-      minHeight: '100vh',
-    }}>
+    <>
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: darkMode ? '#333' : '#333',
+        backgroundColor: '#333',
         padding: '10px 20px',
         position: 'relative',
         width: '100%',
@@ -136,7 +129,7 @@ export default function User() {
       }}>
         <IconButton
           onClick={toggleSideMenu}
-          style={{ color: darkMode ? 'white' : 'white' }}
+          style={{ color: 'white' }}
         >
           <MenuIcon />
         </IconButton>
@@ -155,71 +148,8 @@ export default function User() {
         >
           Adali Clothing
         </Typography>
-
-        <Box sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {isLoggedIn ? (
-            <Box sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <IconButton
-                onClick={handleCartClick}
-                sx={{
-                  color: '#fff',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  }
-                }}
-              >
-                <ShoppingCartIcon />
-              </IconButton>
-              <Button
-                ref={anchorRef}
-                onClick={handleToggle}
-                sx={{
-                  color: '#fff',
-                  zIndex: 1300,
-                  border: '1px solid #fff',
-                  borderRadius: '5px',
-                  padding: '5px 10px',
-                }}
-              >
-                Profil
-              </Button>
-              <Popper
-                open={open}
-                anchorEl={anchorRef.current}
-                placement="bottom-start"
-                transition
-                disablePortal
-                sx={{ zIndex: 1300 }}
-              >
-                {({ TransitionProps, placement }) => (
-                  <Grow {...TransitionProps}>
-                    <Paper>
-                      <ClickAwayListener onClickAway={handleClose}>
-                        <MenuList autoFocusItem={open} onKeyDown={handleListKeyDown}>
-                          <MenuItem onClick={handleClose}>{userName} profilja</MenuItem>
-                          <MenuItem onClick={handleClose}>Fiókom</MenuItem>
-                          <MenuItem onClick={handleLogout}>Kijelentkezés</MenuItem>
-                        </MenuList>
-                      </ClickAwayListener>
-                    </Paper>
-                  </Grow>
-                )}
-              </Popper>
-            </Box>
-          ) : (
-            <>
-              <Button component={Link} to="/sign" sx={{ color: 'white', border: '1px solid white' }}>
-                Sign In
-              </Button>
-              <Button component={Link} to="/signup" sx={{ color: 'white', border: '1px solid white' }}>
-                Sign Up
-              </Button>
-            </>
-          )}
-        </Box>
       </div>
 
-      {/* Side Menu */}
       <Box sx={{
         position: 'fixed',
         top: 0,
@@ -227,92 +157,290 @@ export default function User() {
         width: '250px',
         height: '100%',
         backgroundColor: '#fff',
-        transition: 'left 0.3s',
+        boxShadow: '4px 0px 10px rgba(0, 0, 0, 0.2)',
         zIndex: 1200,
+        transition: 'left 0.1s ease-in-out',
       }}>
         <Menu sideMenuActive={sideMenuActive} toggleSideMenu={toggleSideMenu} />
       </Box>
 
-      {/* Rest of the content */}
-      <Container>
-        <Typography variant="h4" sx={{ mb: 4, color: darkMode ? 'white' : 'black' }}>
-          Admin Felület
-        </Typography>
+      <Box sx={{
+        minHeight: '100vh',
+        backgroundColor: '#333',
+        backgroundImage: 'radial-gradient(#444 1px, transparent 1px)',
+        backgroundSize: '20px 20px',
+        pt: 4,
+        pb: 4
+      }}>
+        <Container maxWidth="lg">
+          <Typography
+            variant="h3"
+            sx={{
+              color: '#fff',
+              mb: 4,
+              textAlign: 'center',
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+            }}
+          >
+            Felhasználói Termékek Kezelése
+          </Typography>
 
-        <FormGroup sx={{ mb: 3 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={darkMode}
-                onChange={() => setDarkMode(!darkMode)}
-                color="primary"
-              />
-            }
-            label="Dark Mode"
-          />
-        </FormGroup>
-
-        <Grid container spacing={3}>
-          {products.map((product) => (
-            <Grid item xs={12} sm={6} md={4} key={product.id}>
-              <Card sx={{ 
-                height: '500px',
-                backgroundColor: darkMode ? '#444' : 'white',
-                color: darkMode ? 'white' : 'black'
-              }}>
-                <Box sx={{ position: 'relative', height: '350px' }}>
-                  <CardMedia
-                    component="img"
-                    sx={{ 
-                      height: '100%',
-                      width: '100%',
-                      objectFit: 'contain'
-                    }}
-                    image={product.imageUrl}
-                    alt={product.title}
-                  />
-                  <Box sx={{ 
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    display: 'flex',
-                    gap: 1
-                  }}>
-                    <IconButton
-                      onClick={() => handleDelete(product.id)}
-                      sx={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        '&:hover': { backgroundColor: 'red', color: 'white' }
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                    <IconButton
-                      sx={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        '&:hover': { backgroundColor: 'blue', color: 'white' }
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
-                <CardContent>
-                  <Typography variant="h6">
-                    {product.title}
-                  </Typography>
-                  <Typography variant="h6" color="primary">
-                    {product.price} Ft
-                  </Typography>
-                  <Typography variant="body2">
-                    {product.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    </Box>
+          <Grid container spacing={3}>
+            {products.map((product) => (
+              <Grid item xs={12} md={6} key={product.id}>
+                <Card sx={{
+                  p: 3,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                  backgroundColor: '#444',
+                  borderRadius: '15px',
+                  transition: 'transform 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-5px)'
+                  }
+                }}>
+                  {editingProduct?.id === product.id ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <TextField
+                        label="Név"
+                        value={editingProduct.nev}
+                        onChange={(e) => setEditingProduct({
+                          ...editingProduct,
+                          nev: e.target.value
+                        })}
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: 'rgba(255,255,255,0.3)',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'rgba(255,255,255,0.5)',
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            color: 'rgba(255,255,255,0.7)',
+                          },
+                          '& .MuiInputBase-input': {
+                            color: '#fff',
+                          }
+                        }}
+                      />
+                      <TextField
+                        label="Ár"
+                        type="number"
+                        value={editingProduct.ar}
+                        onChange={(e) => setEditingProduct({
+                          ...editingProduct,
+                          ar: e.target.value
+                        })}
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: 'rgba(255,255,255,0.3)',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'rgba(255,255,255,0.5)',
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            color: 'rgba(255,255,255,0.7)',
+                          },
+                          '& .MuiInputBase-input': {
+                            color: '#fff',
+                          }
+                        }}
+                      />
+                      <TextField
+                        label="Méret"
+                        value={editingProduct.meret}
+                        onChange={(e) => setEditingProduct({
+                          ...editingProduct,
+                          meret: e.target.value
+                        })}
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: 'rgba(255,255,255,0.3)',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'rgba(255,255,255,0.5)',
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            color: 'rgba(255,255,255,0.7)',
+                          },
+                          '& .MuiInputBase-input': {
+                            color: '#fff',
+                          }
+                        }}
+                      />
+                      <TextField
+                        label="Kép URL"
+                        value={editingProduct.imageUrl}
+                        onChange={(e) => setEditingProduct({
+                          ...editingProduct,
+                          imageUrl: e.target.value
+                        })}
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: 'rgba(255,255,255,0.3)',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'rgba(255,255,255,0.5)',
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            color: 'rgba(255,255,255,0.7)',
+                          },
+                          '& .MuiInputBase-input': {
+                            color: '#fff',
+                          }
+                        }}
+                      />
+                      <TextField
+                        label="Leírás"
+                        multiline
+                        rows={4}
+                        value={editingProduct.leiras}
+                        onChange={(e) => setEditingProduct({
+                          ...editingProduct,
+                          leiras: e.target.value
+                        })}
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: 'rgba(255,255,255,0.3)',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'rgba(255,255,255,0.5)',
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            color: 'rgba(255,255,255,0.7)',
+                          },
+                          '& .MuiInputBase-input': {
+                            color: '#fff',
+                          }
+                        }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                        <Button
+                          startIcon={<SaveIcon />}
+                          variant="contained"
+                          onClick={handleSave}
+                          sx={{
+                            flex: 1,
+                            bgcolor: '#4CAF50',
+                            '&:hover': { bgcolor: '#388E3C' }
+                          }}
+                        >
+                          Mentés
+                        </Button>
+                        <Button
+                          startIcon={<CancelIcon />}
+                          variant="outlined"
+                          onClick={() => setEditingProduct(null)}
+                          sx={{
+                            flex: 1,
+                            borderColor: '#fff',
+                            color: '#fff'
+                          }}
+                        >
+                          Mégse
+                        </Button>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Box sx={{ height: '100%' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                        <img 
+                          src={product.imageUrl} 
+                          alt={product.nev}
+                          style={{ 
+                            maxHeight: '200px', 
+                            maxWidth: '100%', 
+                            objectFit: 'contain',
+                            borderRadius: '8px'
+                          }}
+                        />
+                      </Box>
+                      <Typography variant="h5" sx={{
+                        mb: 2,
+                        color: '#fff',
+                        fontWeight: 500
+                      }}>
+                        {product.nev}
+                      </Typography>
+                      <Divider sx={{ mb: 2 }} />
+                      <Typography sx={{
+                        mb: 2,
+                        color: '#90caf9',
+                        fontSize: '1.2rem'
+                      }}>
+                        {product.ar} Ft
+                      </Typography>
+                      <Typography sx={{
+                        mb: 2,
+                        color: 'rgba(255,255,255,0.7)',
+                        fontSize: '0.95rem'
+                      }}>
+                        Méret: {product.meret}
+                      </Typography>
+                      <Typography sx={{
+                        mb: 3,
+                        color: 'rgba(255,255,255,0.7)',
+                        fontSize: '0.95rem'
+                      }}>
+                        {product.leiras}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 2, mt: 'auto' }}>
+                        <Tooltip title="Szerkesztés">
+                          <IconButton
+                            onClick={() => handleEdit(product)}
+                            sx={{
+                              color: '#90caf9'
+                            }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Törlés">
+                          <IconButton
+                            onClick={() => handleDelete(product.id)}
+                            sx={{
+                              color: '#f44336'
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </Box>
+                  )}
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+     
+          <Button
+            onClick={() => navigate('/admin')}
+            variant="contained"
+            sx={{
+              mt: 4,
+              bgcolor: '#555',
+              '&:hover': { bgcolor: '#666' }
+            }}
+          >
+            Vissza az admin felületre
+          </Button>
+        </Container>
+      </Box>
+    </>
   );
 }

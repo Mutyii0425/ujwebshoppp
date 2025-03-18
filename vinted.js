@@ -37,7 +37,6 @@ export default function Vinted() {
   const [userName, setUserName] = useState('');
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [categories, setCategories] = useState([]);
   const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
   const cartItemCount = cartItems.reduce((total, item) => total + item.mennyiseg, 0);
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
@@ -49,7 +48,7 @@ export default function Vinted() {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://localhost:5000/categories');
+        const response = await fetch('http://localhost:5000/products');
         const data = await response.json();
         await new Promise(resolve => setTimeout(resolve, 1500));
         setProducts(data);
@@ -62,6 +61,7 @@ export default function Vinted() {
     fetchProducts();
   }, []);
   
+  
   useEffect(() => {
     const handleKeyPress = (event) => {
       const userData = localStorage.getItem('user');
@@ -73,6 +73,7 @@ export default function Vinted() {
         }
       }
     };
+
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [navigate]);
@@ -91,9 +92,23 @@ export default function Vinted() {
     fetchProducts();
   }, []);
 
-  const filteredProducts = selectedCategory
-    ? products.filter(product => product.kategoriaId === selectedCategory)
-    : products;
+  const filteredProducts = selectedCategory 
+      ? products.filter(product => {
+          if (selectedCategory === 'Sapkák') return product.kategoriaId === 1;
+          if (selectedCategory === 'Nadrágok') return product.kategoriaId === 2;
+          if (selectedCategory === 'Zoknik') return product.kategoriaId === 3;
+          if (selectedCategory === 'Pólók') return product.kategoriaId === 4;
+          if (selectedCategory === 'Pulloverek') return product.kategoriaId === 5;
+          if (selectedCategory === 'Kabátok') return product.kategoriaId === 6;
+          if (selectedCategory === 'Lábviseletek') return product.kategoriaId === 7;
+          if (selectedCategory === 'Atléták') return product.kategoriaId === 8;
+          if (selectedCategory === 'Kiegészítők') return product.kategoriaId === 9;
+          if (selectedCategory === 'Szoknyák') return product.kategoriaId === 10;
+          if (selectedCategory === 'Alsóneműk') return product.kategoriaId === 11;
+          if (selectedCategory === 'Mellények') return product.kategoriaId === 12;  
+          return true;
+        })
+      : products;
 
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
@@ -147,7 +162,6 @@ export default function Vinted() {
     checkLoginStatus();
   }, []);
     return (
-      // A fő div-nél adjuk hozzá a transition tulajdonságot:
 <div style={{
   backgroundColor: darkMode ? '#333' : '#f5f5f5',
   backgroundImage: darkMode 
@@ -156,42 +170,52 @@ export default function Vinted() {
   backgroundSize: '20px 20px',
   color: darkMode ? 'white' : 'black',
   minHeight: '100vh',
-  transition: 'all 0.3s ease-in-out' // Ez adja az átmenetet
+  transition: 'all 0.3s ease-in-out' 
 }}>
 
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: darkMode ? '#333' : '#333',
-        padding: '10px 20px',
-        position: 'relative',
-        width: '100%',
-        boxSizing: 'border-box',
-      }}>
+       <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: darkMode ? '#333' : '#333',
+          padding: '10px 20px',
+          position: 'relative',
+          width: '100%',
+          boxSizing: 'border-box',
+          borderBottom: '3px solid #ffffff', 
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', 
+          marginBottom: '10px',
+        }}
+      >
         <IconButton
           onClick={toggleSideMenu}
           style={{ color: darkMode ? 'white' : 'white' }}
         >
           <MenuIcon />
         </IconButton>
-
+      
         <Typography
-          variant="h1"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontWeight: 'bold',
-            fontSize: '2rem',
-            color: darkMode ? 'white' : 'white',
-            margin: 0,
+            variant="h1"
+            sx={{
+              fontWeight: 'bold',
+              fontSize: {
+                xs: '1.1rem',    
+                sm: '1.5rem', 
+                md: '2rem'     
+              },
+              textAlign: 'center',
+              color: 'white',
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'auto',
+              pointerEvents: 'none'
           }}
         >
           Adali Clothing
         </Typography>
-
-        <Box sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {isLoggedIn ? (
             <Box sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <IconButton
@@ -217,40 +241,110 @@ export default function Vinted() {
                 </Badge>
               </IconButton>
               <Button
-                ref={anchorRef}
-                onClick={handleToggle}
-                sx={{
-                  color: '#fff',
-                  zIndex: 1300,
-                  border: '1px solid #fff',
-                  borderRadius: '5px',
-                  padding: '5px 10px',
-                }}
-              >
-                Profil
-              </Button>
-              <Popper
+                                ref={anchorRef}
+                                onClick={handleToggle}
+                                sx={{
+                                  color: '#fff',
+                                  zIndex: 1300,
+                                  border: '1px solid #fff',
+                                  borderRadius: '5px',
+                                  padding: '5px 10px',
+                                }}
+                              >
+                                Profil
+                              </Button>
+                              <Popper
                 open={open}
                 anchorEl={anchorRef.current}
                 placement="bottom-start"
                 transition
                 disablePortal
-                sx={{ zIndex: 1300 }}
+                sx={{ 
+                  zIndex: 1300,
+                  mt: 1, 
+                  '& .MuiPaper-root': {
+                    overflow: 'hidden',
+                    borderRadius: '12px',
+                    boxShadow: darkMode 
+                      ? '0 8px 32px rgba(0, 0, 0, 0.4)'
+                      : '0 8px 32px rgba(0, 0, 0, 0.1)',
+                    border: darkMode 
+                      ? '1px solid rgba(255, 255, 255, 0.1)'
+                      : '1px solid rgba(0, 0, 0, 0.05)',
+                  }
+                }}
               >
                 {({ TransitionProps, placement }) => (
                   <Grow
                     {...TransitionProps}
                     style={{
-                      transformOrigin:
-                        placement === 'bottom-start' ? 'left top' : 'left bottom',
+                      transformOrigin: placement === 'bottom-start' ? 'left top' : 'left bottom',
                     }}
                   >
-                    <Paper>
+                    <Paper
+                      sx={{
+                        backgroundColor: darkMode ? '#2d2d2d' : '#ffffff',
+                        minWidth: '200px',
+                      }}
+                    >
                       <ClickAwayListener onClickAway={handleClose}>
-                        <MenuList autoFocusItem={open} onKeyDown={handleListKeyDown}>
-                          <MenuItem onClick={handleClose}>{userName} profilja</MenuItem>
-                          <MenuItem onClick={handleClose}>Fiókom</MenuItem>
-                          <MenuItem onClick={handleLogout}>Kijelentkezés</MenuItem>
+                        <MenuList 
+                          autoFocusItem={open} 
+                          onKeyDown={handleListKeyDown}
+                          sx={{ py: 1 }}
+                        >
+                          <MenuItem 
+                            onClick={handleClose}
+                            sx={{
+                              py: 1.5,
+                              px: 2,
+                              color: darkMode ? '#fff' : '#333',
+                              '&:hover': {
+                                backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.04)',
+                              },
+                              gap: 2,
+                            }}
+                          >
+                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                              {userName} profilja
+                            </Typography>
+                          </MenuItem>
+              
+                          <MenuItem 
+                            onClick={() => {
+                              handleClose();
+                              navigate('/fiokom');
+                            }}
+                            sx={{
+                              py: 1.5,
+                              px: 2,
+                              color: darkMode ? '#fff' : '#333',
+                              '&:hover': {
+                                backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.04)',
+                              },
+                              gap: 2,
+                            }}
+                          >
+                            <Typography variant="body1">Fiókom</Typography>
+                          </MenuItem>
+              
+                          <MenuItem 
+                            onClick={handleLogout}
+                            sx={{
+                              py: 1.5,
+                              px: 2,
+                              color: '#ff4444',
+                              '&:hover': {
+                                backgroundColor: 'rgba(255,68,68,0.1)',
+                              },
+                              gap: 2,
+                              borderTop: '1px solid',
+                              borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                              mt: 1,
+                            }}
+                          >
+                            <Typography variant="body1">Kijelentkezés</Typography>
+                          </MenuItem>
                         </MenuList>
                       </ClickAwayListener>
                     </Paper>
@@ -261,37 +355,54 @@ export default function Vinted() {
           ) : (
             <>
               <Button
-                component={Link}
-                to="/sign"
-                sx={{
-                  color: '#fff',
-                  border: '1px solid #fff',
-                  borderRadius: '5px',
-                  padding: '5px 10px',
-                  '&:hover': {
-                    backgroundColor: '#fff',
-                    color: '#333',
-                  },
-                }}
-              >
-                Sign In
-              </Button>
-              <Button
-                component={Link}
-                to="/signup"
-                sx={{
-                  color: '#fff',
-                  border: '1px solid #fff',
-                  borderRadius: '5px',
-                  padding: '5px 10px',
-                  '&:hover': {
-                    backgroundColor: '#fff',
-                    color: '#333',
-                  },
-                }}
-              >
-                Sign Up
-              </Button>
+               component={Link}
+               to="/sign"
+               sx={{
+                 color: '#fff',
+                 border: '1px solid #fff',
+                 borderRadius: '5px',
+                 padding: {
+                   xs: '2px 6px',  
+                   sm: '5px 10px'
+                 },
+                 fontSize: {
+                   xs: '0.7rem',   
+                   sm: '1rem'
+                 },
+                 whiteSpace: 'nowrap',
+                 '&:hover': {
+                   backgroundColor: '#fff',
+                   color: '#333',
+                 },
+               }}
+             >
+               Sign In
+             </Button>
+             
+             <Button
+               component={Link}
+               to="/signup"
+               sx={{
+                 color: '#fff',
+                 border: '1px solid #fff',
+                 borderRadius: '5px',
+                 padding: {
+                   xs: '2px 6px',  
+                   sm: '5px 10px'
+                 },
+                 fontSize: {
+                   xs: '0.7rem',   
+                   sm: '1rem'
+                 },
+                 whiteSpace: 'nowrap',
+                 '&:hover': {
+                   backgroundColor: '#fff',
+                   color: '#333',
+                 },
+               }}
+             >
+               Sign Up
+             </Button>
             </>
           )}
         </Box>
@@ -324,49 +435,190 @@ export default function Vinted() {
         />
       </FormGroup>
 
-      <Container maxWidth="xl" sx={{ mt: 8, mb: 4 }}>
+      <Container maxWidth="xl" sx={{ mt: 8, mb: 8 }}>
         <Typography variant="h4" sx={{ mb: 4, textAlign: 'center', color: darkMode ? 'white' : 'black' }}>
           Feltöltött Termékek
         </Typography>
 
         <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          gap: 2, 
-          mb: 4, 
-          flexWrap: 'wrap',
-          marginTop: '20px'
-        }}>
-          <Button 
-            variant="contained"
-            onClick={() => setSelectedCategory(null)}
-            sx={{ 
-              backgroundColor: !selectedCategory ? '#333' : '#555',
-              color: 'white',
-              '&:hover': {
-                backgroundColor: !selectedCategory ? '#444' : '#666',
-              }
-            }}
-          >
-            Összes
-          </Button>
-          {categories.map((category) => (
-            <Button
-              key={category.cs_azonosito}
-              variant="contained"
-              onClick={() => setSelectedCategory(category.cs_azonosito)}
-              sx={{ 
-                backgroundColor: selectedCategory === category.cs_azonosito ? '#333' : '#555',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: selectedCategory === category.cs_azonosito ? '#444' : '#666',
-                }
-              }}
-            >
-              {category.cs_nev}
-            </Button>
-          ))}
-        </Box>
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    gap: 2, 
+                    mb: 4, 
+                    flexWrap: 'wrap',
+                    marginTop: '20px'
+                  }}>
+                    <Button 
+                      variant="contained"
+                      onClick={() => setSelectedCategory(null)}
+                      sx={{ 
+                        backgroundColor: !selectedCategory ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: !selectedCategory ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Összes
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Pólók')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Pólók' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Pólók' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Pólók
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Nadrágok')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Nadrágok' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Nadrágok' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Nadrágok
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Pulloverek')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Pulloverek' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Pulloverek' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Pulóverek
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Zoknik')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Zoknik' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Zoknik' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Zoknik
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Kabátok')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Kabátok' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Kabátok' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Kabátok
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Lábviseletek')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Lábviseletek' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Lábviseletek' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Lábviseletek
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Atléták')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Atléták' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Atléták' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Atléták
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Szoknyák')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Szoknyák' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Szoknyák' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Szoknyák
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Alsóneműk')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Alsóneműk' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Alsóneműk' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Alsóneműk
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Mellények')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Mellények' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Mellények' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Mellények
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Kiegészítők')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Kiegészítők' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Kiegészítők' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Kiegészítők
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setSelectedCategory('Sapkák')}
+                      sx={{ 
+                        backgroundColor: selectedCategory === 'Sapkák' ? '#333' : '#555',
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: selectedCategory === 'Sapkák' ? '#444' : '#666',
+                        }
+                      }}
+                    >
+                      Sapkák
+                    </Button>
+
+                  </Box>
 
         {isLoading ? (
   <Box sx={{
@@ -387,15 +639,16 @@ export default function Vinted() {
     {filteredProducts.map((product) => (
       <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
         <Link to={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
-          <Card sx={{
-            height: '500px',
-            backgroundColor: darkMode ? '#333' : 'white',
-            color: darkMode ? 'white' : 'black',
-            transition: 'transform 0.2s',
-            '&:hover': {
-              transform: 'scale(1.02)'
-            }
-          }}>
+        <Card sx={{
+  height: '500px',
+  backgroundColor: darkMode ? '#333' : 'white',
+  color: darkMode ? 'white' : 'black',
+  transition: 'transform 0.2s',
+  border: darkMode ? '1px solid #fff' : '1px solid #000',
+  '&:hover': {
+    transform: 'scale(1.02)'
+  }
+}}>
             <Box sx={{ position: 'relative', height: '350px' }}>
               <CardMedia
                 component="img"
@@ -553,7 +806,15 @@ export default function Vinted() {
 )}
 
       </Container>
-   
+      <Box sx={{ 
+      backgroundColor: darkMode ? '#333' : '#f5f5f5',
+      backgroundImage: darkMode 
+        ? 'radial-gradient(#444 1px, transparent 1px)'
+        : 'radial-gradient(#e0e0e0 1px, transparent 1px)',
+      backgroundSize: '20px 20px',
+      pb: 8 
+    }}>
+    </Box>
       <Footer />
     </div>
   );

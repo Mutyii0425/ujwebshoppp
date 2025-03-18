@@ -11,7 +11,6 @@ import {
   TextField,
   Button,
   Card,
-  CardContent,
   Divider,
   createTheme,
   ThemeProvider
@@ -21,8 +20,8 @@ export default function Shipping() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const { cartItems, totalPrice } = location.state;
-  const [discountPercentage, setDiscountPercentage] = useState(0);
+const { cartItems, totalPrice } = location.state;
+const [discountPercentage, setDiscountPercentage] = useState(0);
 const [orderSuccess, setOrderSuccess] = useState(false);
 const [isLoading, setIsLoading] = useState(false);
 const [darkMode, setDarkMode] = useState(true);
@@ -37,62 +36,124 @@ const [orderData, setOrderData] = useState({
 const [rating, setRating] = useState(0);
 const [comment, setComment] = useState('');
 
+const [errors, setErrors] = useState({
+  nev: false,
+  telefonszam: false,
+  email: false,
+  irsz: false,
+  telepules: false,
+  kozterulet: false
+});
+const validateForm = () => {
+  const newErrors = {};
+  let isValid = true;
 
-// Then calculate discount amounts
+
+  Object.keys(orderData).forEach(field => {
+    if (!orderData[field].trim()) {
+      newErrors[field] = true;
+      isValid = false;
+    } else {
+      newErrors[field] = false;
+    }
+  });
+
+
+  if (!orderData.email.includes('@')) {
+    newErrors.email = true;
+    isValid = false;
+  }
+
+
+  const irszRegex = /^\d{4}$/;
+  if (!irszRegex.test(orderData.irsz)) {
+    newErrors.irsz = true;
+    isValid = false;
+  }
+
+ 
+  const phoneRegex = /^(\+36|06)[0-9]{9}$/;
+  if (!phoneRegex.test(orderData.telefonszam)) {
+    newErrors.telefonszam = true;
+    isValid = false;
+  }
+
+  setErrors(newErrors);
+  return isValid;
+};
+
 const discountAmount = Math.round((totalPrice * discountPercentage) / 100);
 const finalPrice = totalPrice - discountAmount + 1590;
- 
-  const handleSubmitOrder = async () => {
-    setIsLoading(true);
-    try {
-      // Create order with discounted price
-      const vevoResponse = await fetch('http://localhost:5000/vevo/create', {
-        method: 'POST', 
+const handleSubmitOrder = async () => {
+
+  if (!validateForm()) {
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    const vevoResponse = await fetch('http://localhost:5000/vevo/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...orderData,
+        vegosszeg: finalPrice
+      })
+    });
+
+    if (!vevoResponse.ok) {
+      const errorData = await vevoResponse.json();
+      throw new Error(errorData.error || 'Hiba történt a rendelés során');
+    }
+
+    const vevoResult = await vevoResponse.json();
+
+
+    for (const item of cartItems) {
+      await fetch('http://localhost:5000/orders/create', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...orderData,
-          vegosszeg: finalPrice // Include discounted final price
+          termek: item.id,
+          statusz: 'Feldolgozás alatt',
+          mennyiseg: item.mennyiseg,
+          vevo_id: vevoResult.id,
+          ar: item.ar
         })
       });
-  
-      const vevoResult = await vevoResponse.json();
+    }
 
-      // Rendelések létrehozása minden termékhez
-      for (const item of cartItems) {
-        await fetch('http://localhost:5000/orders/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            termek: item.id,
-            statusz: 'Feldolgozás alatt',
-            mennyiseg: item.mennyiseg,
-            vevo_id: vevoResult.id
-          })
-        });
-      }
+    const optimizedCartItems = cartItems.map(item => ({
+      id: item.id,
+      nev: item.nev,
+      ar: item.ar,
+      mennyiseg: item.mennyiseg,
+      size: item.size || item.meret,
+      imageUrl: item.imageUrl // Csak az URL-t küldd, ne a teljes képet
+    }));
 
-        // Email küldés
-        const emailResponse = await fetch('http://localhost:4000/send-confirmation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: orderData.email,
-            name: orderData.nev,
-            orderId: vevoResult.id,
-            orderItems: cartItems,
-            shippingDetails: {
-              phoneNumber: orderData.telefonszam,
-              zipCode: orderData.irsz,
-              city: orderData.telepules,
-              address: orderData.kozterulet
-            },
-            totalPrice: finalPrice,
-            discount: discountAmount,
-            shippingCost: 1590
-          })
-        });
+    const emailResponse = await fetch('http://localhost:4000/send-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: orderData.email,
+        name: orderData.nev,
+        orderId: vevoResult.id,
+        orderItems: optimizedCartItems,
+        shippingDetails: {
+          phoneNumber: orderData.telefonszam,
+          zipCode: orderData.irsz,
+          city: orderData.telepules,
+          address: orderData.kozterulet
+        },
+        totalPrice: finalPrice,
+        discount: discountAmount,
+        shippingCost: 1590
+      })
+    });
+    
         
-
+           
         const emailResult = await emailResponse.json();
         if (emailResult.success) {
           console.log('Email sikeresen elküldve!');
@@ -100,32 +161,40 @@ const finalPrice = totalPrice - discountAmount + 1590;
           console.error('Hiba az email küldésekor:', emailResult.error);
         }
   
+        const user = JSON.parse(localStorage.getItem('user'));
+if (user && user.f_azonosito) {
+  await fetch(`http://localhost:5000/api/update-order-stats`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId: user.f_azonosito,
+      orderAmount: finalPrice,
+      orderDate: new Date()
+    })
+  });
+}
+
         setOrderSuccess(true);
-      
-        // További kód...
+
         localStorage.removeItem('cartItems');
-      
-       
-  
       } catch (error) {
         console.error('Rendelési hiba:', error);
         alert('Hiba történt a rendelés során!');
       }
       setIsLoading(false);
     };
-
- 
+      
     const saveRatingToDatabase = async (rating, comment) => {
       try {
         const userData = JSON.parse(localStorage.getItem('user'));
-        const response = await fetch('http://localhost:4000/save-rating', {
+        const response = await fetch('http://localhost:5000/save-rating', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             rating,
-            comment,
+            velemeny: comment || null,
             email: userData.email,
             orderDate: new Date()
           })
@@ -139,7 +208,6 @@ const finalPrice = totalPrice - discountAmount + 1590;
       }
     };
     
-  // Define textFieldStyle here
   const textFieldStyle = {
     '& .MuiOutlinedInput-root': {
       backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
@@ -181,13 +249,15 @@ const finalPrice = totalPrice - discountAmount + 1590;
     if (userData) {
       const user = JSON.parse(userData);
       if (user.kupon) {
-        // Extract percentage from coupon string
-        const percentage = parseInt(user.kupon.match(/\d+/)[0]);
-        setDiscountPercentage(percentage);
+        
+        const matches = user.kupon.match(/\d+/);
+        if (matches && matches.length > 0) {
+          const percentage = parseInt(matches[0]);
+          setDiscountPercentage(percentage);
+        }
       }
     }
   }, []);
-
   
 
     return (
@@ -202,10 +272,10 @@ const finalPrice = totalPrice - discountAmount + 1590;
     color: darkMode ? 'white' : 'black',
     minHeight: '100vh',
     transition: 'all 0.3s ease-in-out',
-    display: 'flex',           // Added for centering
-    alignItems: 'center',      // Added for vertical centering
-    justifyContent: 'center',  // Added for horizontal centering
-    padding: '0rem 0'          // Added for some vertical padding
+    display: 'flex',        
+    alignItems: 'center',      
+    justifyContent: 'center', 
+    padding: '3rem 0'         
   }}
 >
           <Container maxWidth="lg">
@@ -216,7 +286,7 @@ const finalPrice = totalPrice - discountAmount + 1590;
                 flexDirection: { xs: 'column', md: 'row' }
               }}
             >
-              {/* Bal oldali szállítási űrlap */}
+             
               <Card
                 elevation={8}
                 sx={{
@@ -244,52 +314,66 @@ const finalPrice = totalPrice - discountAmount + 1590;
                   Szállítási adatok
                 </Typography>
 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <TextField
-                    fullWidth
-                    label="Név"
-                    value={orderData.nev}
-                    onChange={(e) => setOrderData({...orderData, nev: e.target.value})}
-                    sx={textFieldStyle}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Telefonszám"
-                    value={orderData.telefonszam}
-                    onChange={(e) => setOrderData({...orderData, telefonszam: e.target.value})}
-                    sx={textFieldStyle}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    value={orderData.email}
-                    onChange={(e) => setOrderData({...orderData, email: e.target.value})}
-                    sx={textFieldStyle}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Irányítószám"
-                    value={orderData.irsz}
-                    onChange={(e) => setOrderData({...orderData, irsz: e.target.value})}
-                    sx={textFieldStyle}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Település"
-                    value={orderData.telepules}
-                    onChange={(e) => setOrderData({...orderData, telepules: e.target.value})}
-                    sx={textFieldStyle}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Közterület"
-                    value={orderData.kozterulet}
-                    onChange={(e) => setOrderData({...orderData, kozterulet: e.target.value})}
-                    sx={textFieldStyle}
-                  />
-                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+  <TextField
+    fullWidth
+    label="Név"
+    value={orderData.nev}
+    onChange={(e) => setOrderData({...orderData, nev: e.target.value})}
+    error={errors.nev}
+    helperText={errors.nev ? "Irja be a nevet!" : ""}
+    sx={textFieldStyle}
+  />
+  <TextField
+    fullWidth
+    label="Telefonszám" 
+    value={orderData.telefonszam}
+    onChange={(e) => setOrderData({...orderData, telefonszam: e.target.value})}
+    error={errors.telefonszam}
+    inputProps={{ maxLength: 12 }}
+    helperText={errors.telefonszam ?"Érvénytelen telefonszám (+36 vagy 06 kezdettel)!" : ""}
+    sx={textFieldStyle}
+  />
+  <TextField
+    fullWidth
+    label="Email"
+    value={orderData.email} 
+    onChange={(e) => setOrderData({...orderData, email: e.target.value})}
+    error={errors.email}
+    helperText={errors.email ? "Érvénytelen email cím!" :  ""}
+    sx={textFieldStyle}
+  />
+  <TextField
+    fullWidth
+    label="Irányítószám"
+    value={orderData.irsz}
+    onChange={(e) => setOrderData({...orderData, irsz: e.target.value})}
+    error={errors.irsz} 
+    inputProps={{ maxLength: 4 }}
+    helperText={errors.irsz ? "Az irányítószámnak pontosan 4 számjegyből kell állnia!"  : ""}
+    sx={textFieldStyle}
+  />
+  <TextField
+    fullWidth
+    label="Település"
+    value={orderData.telepules}
+    onChange={(e) => setOrderData({...orderData, telepules: e.target.value})}
+    error={errors.telepules}
+    helperText={errors.telepules ? "Irja be a település nevét!" : ""}
+    sx={textFieldStyle}
+  />
+  <TextField
+    fullWidth
+    label="Közterület"
+    value={orderData.kozterulet}
+    onChange={(e) => setOrderData({...orderData, kozterulet: e.target.value})}
+    error={errors.kozterulet}
+    helperText={errors.kozterulet ? "Adja meg a közterületét!" : ""}
+    sx={textFieldStyle}
+  />
+</Box>
               </Card>
-              {/* Jobb oldali összegzés */}
+             
               <Card
                 elevation={8}
                 sx={{
@@ -329,7 +413,7 @@ const finalPrice = totalPrice - discountAmount + 1590;
                       }}
                     >
            <Typography sx={{ color: '#fff' }}>
-    {item.nev} (x{item.mennyiseg})
+           {item.nev} - Méret: {item.size || item.meret} (x{item.mennyiseg})
     </Typography>
 
     <Typography sx={{ color: '#fff' }}>
@@ -377,8 +461,8 @@ const finalPrice = totalPrice - discountAmount + 1590;
     display: 'flex', 
     gap: 2, 
     mt: 3,
-    justifyContent: 'space-between', // Jobb térközök
-    alignItems: 'center' // Függőleges középre igazítás
+    justifyContent: 'space-between',
+    alignItems: 'center' 
     }}>
     <Button
     variant="outlined"
@@ -386,7 +470,7 @@ const finalPrice = totalPrice - discountAmount + 1590;
     startIcon={<ArrowBackIcon />}
     onClick={() => navigate('/kezdolap')}
     sx={{
-      width: '40%', // Kisebb szélesség
+      width: '40%',
       py: 1.5,
       borderColor: darkMode ? '#666' : '#333',
       color: darkMode ? '#fff' : '#333',
@@ -408,7 +492,7 @@ const finalPrice = totalPrice - discountAmount + 1590;
     sx={{
       fontSize: '1.1rem',
               fontWeight: 600,
-      width: '55%', // Nagyobb szélesség
+      width: '55%',
       py: 1.5,
       backgroundColor: darkMode ? '#666' : '#333',
       '&:hover': {
@@ -423,8 +507,6 @@ const finalPrice = totalPrice - discountAmount + 1590;
     </Box>
               </Card>
             </Box>
-  
-            {/* Loading indicator here */}
             {isLoading && (
               <Box sx={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
                 <CircularProgress />
@@ -487,4 +569,3 @@ const finalPrice = totalPrice - discountAmount + 1590;
     )
   
 };
-

@@ -95,11 +95,11 @@ app.delete('/products/:id', (req, res) => {
 
 app.put('/products/:id', (req, res) => {
   const productId = req.params.id;
-  const { ar, nev, leiras, meret, imageUrl, images } = req.body;
+  const { ar, nev, leiras, meret } = req.body;
   
-  const query = 'UPDATE usertermekek SET ar = ?, nev = ?, leiras = ?, meret = ?, imageUrl = ?, images = ? WHERE id = ?';
+  const query = 'UPDATE usertermekek SET ar = ?, nev = ?, leiras = ?, meret = ? WHERE id = ?';
   
-  db.query(query, [ar, nev, leiras, meret, imageUrl, JSON.stringify(images), productId], (err, result) => {
+  db.query(query, [ar, nev, leiras, meret, productId], (err, result) => {
     if (err) {
       console.log('Hiba a termék frissítésénél:', err);
       res.status(500).json({ error: 'Hiba a frissítés során' });
@@ -796,6 +796,5 @@ const port = 5000;
 app.listen(port, () => {
   console.log(`Server fut a ${port} porton`);
 });
-
 
 

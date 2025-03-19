@@ -80,9 +80,7 @@ export default function User() {
       nev: product.nev,
       ar: product.ar,
       leiras: product.leiras,
-      meret: product.meret,
-      imageUrl: product.imageUrl,
-      images: product.images
+      meret: product.meret
     });
   };
 
@@ -97,9 +95,8 @@ export default function User() {
           ar: editingProduct.ar,
           nev: editingProduct.nev,
           leiras: editingProduct.leiras,
-          meret: editingProduct.meret,
-          imageUrl: editingProduct.imageUrl,
-          images: editingProduct.images
+          meret: editingProduct.meret
+        
         }),
       });
 
@@ -277,31 +274,7 @@ export default function User() {
                           }
                         }}
                       />
-                      <TextField
-                        label="Kép URL"
-                        value={editingProduct.imageUrl}
-                        onChange={(e) => setEditingProduct({
-                          ...editingProduct,
-                          imageUrl: e.target.value
-                        })}
-                        fullWidth
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            '& fieldset': {
-                              borderColor: 'rgba(255,255,255,0.3)',
-                            },
-                            '&:hover fieldset': {
-                              borderColor: 'rgba(255,255,255,0.5)',
-                            },
-                          },
-                          '& .MuiInputLabel-root': {
-                            color: 'rgba(255,255,255,0.7)',
-                          },
-                          '& .MuiInputBase-input': {
-                            color: '#fff',
-                          }
-                        }}
-                      />
+                     
                       <TextField
                         label="Leírás"
                         multiline
@@ -358,18 +331,7 @@ export default function User() {
                     </Box>
                   ) : (
                     <Box sx={{ height: '100%' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                        <img 
-                          src={product.imageUrl} 
-                          alt={product.nev}
-                          style={{ 
-                            maxHeight: '200px', 
-                            maxWidth: '100%', 
-                            objectFit: 'contain',
-                            borderRadius: '8px'
-                          }}
-                        />
-                      </Box>
+                     
                       <Typography variant="h5" sx={{
                         mb: 2,
                         color: '#fff',
